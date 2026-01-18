@@ -160,10 +160,49 @@ _start:
     syscall
 ```
 
+Assemble và link file .asm:
+```
+nasm -f elf64 write.asm -o write.o
+ld write.o -o write
+```
+Chạy:
+```
+./write 
+```
+<img width="801" height="97" alt="image" src="https://github.com/user-attachments/assets/a95bf5a3-9dac-41f0-bc0e-293e978375e7" />
+
+
 ### Tạo shell (spawn shell):
+* `/bin/sh`: 
+```
+0x68732f6e69622f
+```
+<img width="1019" height="632" alt="image" src="https://github.com/user-attachments/assets/03bfa6ab-9cdc-41ca-ac4d-8401f2b04c50" />
 
+* syscall:
+<img width="996" height="176" alt="image" src="https://github.com/user-attachments/assets/e7ecbd11-9ace-4de3-950e-d2ab14745b05" />
 
+Assembly code:
+```
+	; spawn shell
+	; shel: /bin/sh - 2F 62 69 6E 2F 73 68 - 0x68732f6e69622f
+	mov rbx, 0x68732f6e69622f
+	push rbx
 
+	; execve("/bin/sh", null, null)
+	mov rax, 0x3b ; 59 - execve()
+	mov rdi, rsp
+	mov rsi, 0	
+	mov rdx, 0
+	syscall
+```
+* khi dùng syscall `execve()`, rdi ko được gán trực tiếp hex /bin/sh
+* mà rdi phải là con trỏ đến memory
+* nên ta đấy giá trị shell lên stack, và cho rdi trỏ đến đấy
+
+output:
+<img width="811" height="137" alt="image" src="https://github.com/user-attachments/assets/4f08419d-a5ec-45e6-bc5a-bb43afc2a151" />
+<img width="803" height="105" alt="image" src="https://github.com/user-attachments/assets/bbe1f20e-5148-4de7-8c74-3c99909cef5d" />
 
 
 
