@@ -254,6 +254,9 @@ Assembly code:
     mov rdx, 64
     syscall
 ```
+Output:
+
+<img width="817" height="71" alt="image" src="https://github.com/user-attachments/assets/ca95dccd-a7b6-44fc-babe-abe45c7aaa34" />
 
 ___
 Tài liệu:
