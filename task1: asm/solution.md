@@ -1,4 +1,4 @@
-Task:
+## Task:
 ```
 Task 1: Code asm x64 kết nối đến localhost và gửi nội dung bất kì
 Code asm spawn shell
@@ -7,7 +7,7 @@ Code asm Open read write file flag.txt
 ___
 ### Socket kết nối đến localhost
 Listen trên 1 terminal:
-```
+```c
 nc -lvp 4444
 ```
 
@@ -58,7 +58,7 @@ Output:
 <img width="802" height="110" alt="image" src="https://github.com/user-attachments/assets/1a0eeb7d-6472-4c06-ae10-d5cdf481a645" />
 
 Trình tự thực thi việc kết nối:
-```
+```c
 tạo socket() -> tạo địa chỉ server -> kết nối connect() -> send -> đóng connection close()
 ```
 
@@ -161,12 +161,12 @@ _start:
 ```
 
 Assemble và link file .asm:
-```
+```c
 nasm -f elf64 write.asm -o write.o
 ld write.o -o write
 ```
 Chạy:
-```
+```c
 ./write 
 ```
 <img width="801" height="97" alt="image" src="https://github.com/user-attachments/assets/a95bf5a3-9dac-41f0-bc0e-293e978375e7" />
@@ -183,7 +183,7 @@ Chạy:
 <img width="996" height="176" alt="image" src="https://github.com/user-attachments/assets/e7ecbd11-9ace-4de3-950e-d2ab14745b05" />
 
 Assembly code:
-```
+```asm
 	; spawn shell
 	; shel: /bin/sh - 2F 62 69 6E 2F 73 68 - 0x68732f6e69622f
 	mov rbx, 0x68732f6e69622f
@@ -200,12 +200,37 @@ Assembly code:
 * mà rdi phải là con trỏ đến memory
 * nên ta đấy giá trị shell lên stack, và cho rdi trỏ đến đấy
 
-output:
+Output:
+
 <img width="811" height="137" alt="image" src="https://github.com/user-attachments/assets/4f08419d-a5ec-45e6-bc5a-bb43afc2a151" />
+
 <img width="803" height="105" alt="image" src="https://github.com/user-attachments/assets/bbe1f20e-5148-4de7-8c74-3c99909cef5d" />
 
+### Open, read, write flag.txt từ server:
+* tạo flag.txt:
 
+<img width="814" height="118" alt="image" src="https://github.com/user-attachments/assets/67f01240-e0aa-4e34-acf3-53bc7c17569e" />
 
+* `flag.txt`:
+```c
+0x7478742e67616c66
+```
+<img width="1036" height="600" alt="image" src="https://github.com/user-attachments/assets/503efe04-fbae-4b0f-aed3-9ce08bdf98fd" />
 
+* các syscall tương ứng cho open, read, write:
 
+<img width="848" height="146" alt="image" src="https://github.com/user-attachments/assets/3ad0c3ab-d00b-4e6a-9bc7-f519fe0e8391" />
 
+Assembly code:
+```asm
+
+```
+
+___
+Tài liệu:
+
+https://chromium.googlesource.com/chromiumos/docs/+/master/constants/syscalls.md
+
+https://www.geeksforgeeks.org/c/socket-programming-cc/
+
+https://www.studocu.vn/vn/document/dai-hoc-nguyen-tat-thanh/he-dieu-hanh/2-thao-tac-file-trong-linux/85088160
