@@ -67,7 +67,11 @@ Trình tự thực thi việc kết nối trên:
 ```c
 tạo socket() -> tạo địa chỉ server -> kết nối connect() -> send -> đóng connection close()
 ```
+Syscall tương ứng cho socket, connect:
 
+<img width="844" height="57" alt="image" src="https://github.com/user-attachments/assets/ad30e65a-b831-4191-be99-82b8ea5fa630" />
+
+   
 Chuyển sang code assembly:
 ```asm
 ; write.asm
