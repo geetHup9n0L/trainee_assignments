@@ -53,7 +53,13 @@ int main(void) {
 	return 0;
 }
 ```
-Output:
+Compile code C trên với:
+```c
+gcc client.c -o client
+```
+và chạy: `./client` đến port 4444 đang listening
+
+Có output bên kia:
 
 <img width="802" height="110" alt="image" src="https://github.com/user-attachments/assets/1a0eeb7d-6472-4c06-ae10-d5cdf481a645" />
 
