@@ -129,7 +129,7 @@ _start:
     xor rdx, rdx         ; protocol = 0
     syscall
 
-    mov rbx, rax         ; save sockfd in rbx
+    mov rbx, rax         ; lưu tạm sockfd vào rbx 
 
     ; xây cấu trúc địa chỉ localhost tren stack
     mov rdx, 0x0100007F  ; 127.0.0.1
@@ -144,7 +144,7 @@ _start:
     ; connect() 
     mov rax, 42          ; sys_connect
     mov rdi, rbx         ; sockfd
-    mov rsi, rsp         ; pointer to đến cấu trúc trên
+    mov rsi, rsp         ; pointer trỏ đến cấu trúc địa chỉ trên stack
     mov rdx, 16          ; size
     syscall
 
@@ -261,9 +261,84 @@ Output:
 
 <img width="817" height="71" alt="image" src="https://github.com/user-attachments/assets/ca95dccd-a7b6-44fc-babe-abe45c7aaa34" />
 
+___
 Gom toàn bộ vào 1 code:
 ```asm
+section .data
+helloTxt db "Hello", 10
+len equ $-helloTxt
 
+section .text
+global _start
+
+_start:
+    ; taoj socket() và lưu lại fd 
+    mov rax, 41          ; sys_socket
+    mov rdi, 2           ; AF_INET
+    mov rsi, 1           ; SOCK_STREAM
+    xor rdx, rdx         ; protocol = 0
+    syscall
+
+    mov rbx, rax         ; lưu sockfd vào rbx
+
+    ; xây cấu trúc địa chỉ localhost tren stack
+    mov rdx, 0x0100007F  ; 127.0.0.1
+    push rdx
+
+    mov rdx, 0x5C11      ; port 4444
+    push dx
+
+    mov rdx, 2           ; AF_INET
+    push dx
+
+    ; connect() 
+    mov rax, 42          ; sys_connect
+    mov rdi, rbx         ; sockfd
+    mov rsi, rsp         ; pointer trỏ đến cấu trúc địa chỉ trên stack
+    mov rdx, 16          ; size
+    syscall
+
+    ; write() viết ra server đang listening
+    mov rax, 1           ; sys_write
+    mov rdi, rbx         ; sockfd
+    mov rsi, helloTxt
+    mov rdx, len
+    syscall
+
+    mov rbx, 0
+    push rbx
+    mov rbx, 0x7478742e67616c66
+    push rbx
+
+    ; open() file
+    mov rax, 2
+    mov rdi, rsp
+    mov rsi, 0
+    mov rdx, 0
+    syscall
+
+    mov rbx, rax ; luu fd tu open()
+
+    sub rsp, 0x50 ; tao buffer de luu flag value
+
+    ; read() file to stack
+    mov rax, 0
+    mov rdi, rbx
+    mov rsi, rsp
+    mov rdx, 64
+    syscall
+
+    ; write() output tu stack
+    mov rax, 1
+    mov rdi, 1
+    mov rsi, rsp
+    mov rdx, 64
+    syscall
+
+    ; exit() đóng phiên kết nối
+    mov rax, 60
+    xor rdi, rdi
+    syscall
 ```
 ___
 Tài liệu:
