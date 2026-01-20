@@ -14,7 +14,7 @@ Thông thường, việc users (hoặc là attacker) muốn kết nối đến s
 
 Việc khai thác lỗ hổng đó được khai thác trên chính server, khi mà server có những lỗ hổng trong codebase, web,... tạo điều kiện cho attacker đẩy malicious payload lên server, server thực thi nó và kết nối đến máy chủ attacker đang listening, và attacker sẽ thành công giành được shell trên máy mình
 
-Quy trình sẽ là:
+**Quy trình sẽ là:**
 ```python
 # Attacker mở phiên lắng nghe các kết nối mạng
 Attacker Machine -------- listening trên port xxxx ...
@@ -30,8 +30,11 @@ Attacker Machine <------- connect -------- Server Machine
 # Attacker nhận được shell cấp từ server
 Attacker Machine -------- shell CLI -------> Server Machine
 ```
+**Ảnh:**
+
 <img width="438" height="178" alt="image" src="https://github.com/user-attachments/assets/a582c7ab-504a-4e78-8c19-ef2c0a0f2dae" />
 
+___
 ### Ví dụ:
 **Attacker machine**
 
