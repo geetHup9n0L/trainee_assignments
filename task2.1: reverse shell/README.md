@@ -35,6 +35,8 @@ Attacker Machine -------- shell CLI -------> Server Machine
 ___
 Tài liệu:
 
+https://silviavali.github.io/blog/2019-01-25-blog-SLAE2/
+
 https://www.reddit.com/r/explainlikeimfive/comments/mujbk4/eli5_reverse_shelling_and_shells_in_general/?tl=vi
 
 https://www.imperva.com/learn/application-security/reverse-shell/
