@@ -30,6 +30,8 @@ Attacker Machine <------- connect -------- Server Machine
 # Attacker nhận được shell cấp từ server
 Attacker Machine -------- shell CLI -------> Server Machine
 ```
+<img width="438" height="178" alt="image" src="https://github.com/user-attachments/assets/a582c7ab-504a-4e78-8c19-ef2c0a0f2dae" />
+
 ___
 Tài liệu:
 
