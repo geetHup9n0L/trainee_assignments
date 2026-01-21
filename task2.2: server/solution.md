@@ -91,16 +91,16 @@ void main(void)
 Vai trò:
 * thực hiện listening đón chờ các connection
   * socket(): tạo socket
-    ```
+    ```c
     socketfd = socket(2,1,0);
     ```
   * setsockopt(): thiết lập cho socket; cho phép bind() sử dụng địa chỉ localhost (server)
-    ```
+    ```c
     option_val = 1;
     setsockopt(socketfd,1,2,&option_val,4);
     ```
   * bind(): gán địa chỉ kết nối localhost (ipv4, 1337) của server với socket
-    ```
+    ```c
     sockaddr host_addr; // 16 bytes
     
     struct sockaddr {
@@ -120,7 +120,7 @@ Vai trò:
     accept(socketfd,(sockaddr *)0x0,(socklen_t *)0x0);
     ```
     
- <img width="600" height="74" alt="image" src="https://github.com/user-attachments/assets/5650e00e-97b2-4867-b90d-2c20ab5ec0e5" />
+   <img width="600" height="74" alt="image" src="https://github.com/user-attachments/assets/5650e00e-97b2-4867-b90d-2c20ab5ec0e5" />
 
 * thực hiện `handle_client();`:
 ```c
