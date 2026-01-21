@@ -96,12 +96,13 @@ Vai trò:
     ```
   * setsockopt(): thiết lập cho socket; cho phép bind() sử dụng địa chỉ localhost (server)
     ```c
-    # setsockopt(int  s,  int	level,	int  optname,  const   void   *optval, socklen_t optlen);
+    // int setsockopt(int socket, int level, int option_name, const void *option_value, socklen_t option_len);
     
     option_val = 1;
     setsockopt(socketfd,1,2,&option_val,4);
     ```
-    optname = 2 => `SO_REUSEADDR`
+    `option_name` = 2 => `SO_REUSEADDR`
+    
     <img width="573" height="48" alt="image" src="https://github.com/user-attachments/assets/ac2e76be-0fc0-4f1f-b04e-a8f6d69b280a" />
 
   * bind(): gán địa chỉ kết nối localhost (ipv4, 1337) của server với socket
@@ -113,19 +114,19 @@ Vai trò:
       char        sa_data[14];  // port 1337 + padding null
     }
     ```
-    ```
-    # int bind(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
+    ```c
+    // int bind(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
     
     bindfd = bind(socketfd,&host_addr,16)
     ```
   * listen(): lắng nghe các phiên kết nối ngoài trên socket
     ```c
-    # int listen(int sockfd, int backlog);
+    // int listen(int sockfd, int backlog);
     listen(socketfd,1);
     ```
   * accept(): tạo một socket mới cho thiết bị kết nối đến, mà vẫn giữ socket đang listening ban đầu
     ```c
-    # int accept(int sockfd, struct sockaddr *_Nullable restrict addr, socklen_t *_Nullable restrict addrlen);
+    // int accept(int sockfd, struct sockaddr *_Nullable restrict addr, socklen_t *_Nullable restrict addrlen);
     
     accept(socketfd,(sockaddr *)0x0,(socklen_t *)0x0);
     ```
