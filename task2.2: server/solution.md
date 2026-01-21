@@ -88,8 +88,11 @@ void main(void)
   } while( true );
 }
 ```
-Vai trò:
+**Vai trò:**
 * thực hiện listening đón chờ các connection
+  
+  <img width="807" height="97" alt="image" src="https://github.com/user-attachments/assets/17b6503a-dac0-4e41-833c-3b6a7da7488e" />
+
   * socket(): tạo socket
     ```c
     socketfd = socket(2,1,0);
@@ -132,7 +135,13 @@ Vai trò:
     ```
     <img width="600" height="74" alt="image" src="https://github.com/user-attachments/assets/5650e00e-97b2-4867-b90d-2c20ab5ec0e5" />
 
-* thực hiện `handle_client();`:
+* Khi mà có kết nối từ máy ngoài (user/client), thì thực hiện `handle_client()`:
+
+mô phỏng user/client trên một terminal khác:
+
+<img width="803" height="76" alt="image" src="https://github.com/user-attachments/assets/94ae8195-8560-45f7-a353-5d4b0647f9ae" />
+
+`handle_client()`
 ```c
 void handle_client(int fd)
 {
@@ -188,6 +197,16 @@ undefined8 input(int fd)
   read(fd,buffer,3840);
   ```
   -> khả năng BOF ở đây, và có thể đẩy payload vào đây
+
+Mô phỏng kết nối từ client bằng cách kết nối qua một terminal khác:
+
+* client:
+
+  <img width="803" height="193" alt="image" src="https://github.com/user-attachments/assets/69b2759e-f41d-491a-a056-08b1dcd7f882" />
+
+* server:
+
+  <img width="804" height="119" alt="image" src="https://github.com/user-attachments/assets/c126cf1c-4899-481f-ac79-9720f2fea27e" />
 
 
 
