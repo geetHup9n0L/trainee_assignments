@@ -137,9 +137,9 @@ void main(void)
 
 * Khi mà có kết nối từ máy ngoài (user/client), thì thực hiện `handle_client()`:
 
-mô phỏng user/client trên một terminal khác:
+  mô phỏng user/client trên một terminal khác:
 
-<img width="803" height="76" alt="image" src="https://github.com/user-attachments/assets/94ae8195-8560-45f7-a353-5d4b0647f9ae" />
+  <img width="803" height="76" alt="image" src="https://github.com/user-attachments/assets/94ae8195-8560-45f7-a353-5d4b0647f9ae" />
 
 `handle_client()`
 ```c
