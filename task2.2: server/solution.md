@@ -216,8 +216,9 @@ ___
 * Tính offset đến buffer
 * Sau đấy sẽ read(), đấy shellcode vào phần bộ nhớ của buffer trên stack
 * overflow và overwrite RIP với địa chỉ buffer tính được
+* đóng kết nối để RIP trỏ tới shellcode tại buffer
 
-Thấy trên stack của ./server, có tồn tại địa chỉ stack, libc:
+Thấy trên stack của `./server`, có tồn tại địa chỉ stack, libc:
 ```asm
 0x7fffffffda60: buffer
 ...
