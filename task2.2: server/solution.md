@@ -495,6 +495,7 @@ Và hiện flag.txt:
 
 <img width="783" height="116" alt="image" src="https://github.com/user-attachments/assets/83fb223a-7a02-4ed7-8c25-0aece67f07da" />
 
+script:
 ```python
 from pwn import *
 
