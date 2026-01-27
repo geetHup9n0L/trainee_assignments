@@ -293,13 +293,13 @@ shellcode = asm("""
 		syscall
 	""")
 ```
-Bên cạnh đấy, padding payload cho đến RIP và overwrite với địa chỉ buffer tính được lúc nãy. Để khi chương trình thoát, RIP sẽ di chuyển đến buffer và thực thi shellcode ở đấy.
+Bên cạnh đấy, padding payload cho đến RIP và overwrite RIP với địa chỉ buffer tính được lúc nãy. Để khi chương trình thoát, RIP sẽ di chuyển đến buffer và thực thi shellcode ở đấy. Offset từ địa chỉ buffer đến RIP tính được như sau:
 ```c
 offset = RIP - buffer_addr
        = 616 (512 + 104)
 ```
 
-Chọn option `read` để đẩy payload vào
+Tiếp, chọn option `read` để đẩy payload vào
 
 Và trên stack bên server sẽ như sau:
 
