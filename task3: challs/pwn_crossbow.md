@@ -8,7 +8,6 @@ Partial RELRO   Canary found      NX enabled    No PIE          No RPATH   No RU
 Assembly code: `crossbow`
 ```c
 undefined8 main(void)
-
 {
   setvbuf((FILE *)__stdin_FILE,(char *)0x0,2,0);
   setvbuf((FILE *)__stdout_FILE,(char *)0x0,2,0);
@@ -19,14 +18,16 @@ undefined8 main(void)
 }
 
 
-undefined8 main(void)
+void training(void)
 {
-  setvbuf((FILE *)__stdin_FILE,(char *)0x0,2,0);
-  setvbuf((FILE *)__stdout_FILE,(char *)0x0,2,0);
-  alarm(4882);
-  banner();
-  training();
-  return 0;
+  undefined1 buffer [32];
+  
+  printf("%s\n[%sSir Alaric%s]: You only have 1 shot, don\'t miss!!\n",&DAT_0040b4a8,&DAT_0040b00e,
+         &DAT_0040b4a8);
+  target_dummy(buffer);
+  printf("%s\n[%sSir Alaric%s]: That was quite a shot!!\n\n",&DAT_0040b4a8,&DAT_0040b00e,
+         &DAT_0040b4a8);
+  return;
 }
 
 
