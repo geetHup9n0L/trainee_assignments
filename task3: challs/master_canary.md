@@ -23,7 +23,7 @@ RELRO           STACK CANARY      NX            PIE             RPATH      RUNPA
 Partial RELRO   Canary found      NX enabled    No PIE          No RPATH   No RUNPATH   49 Symbols  No     0               2               mc_thread
 ```
 Code: `mc_thread.c`
-```
+```c
 // Name: mc_thread.c
 // Compile: gcc -o mc_thread mc_thread.c -pthread -no-pie
 #include <pthread.h>
