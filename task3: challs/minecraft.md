@@ -61,3 +61,19 @@ int main(void) {
   }
 }
 ```
+* stack pivot:
+````asm
+   0x000000000040125f <+163>:   lea    rax,[rbp-0x40]
+   0x0000000000401263 <+167>:   mov    rdi,rax
+   0x0000000000401266 <+170>:   call   0x401050 <gets@plt>
+````
+* offset: ``[rbp - 0x40]``
+````python
+pwndbg> p/x 0x7fffffffdcc0 - 0x7fffffffdc80
+$7 = 0x40
+````
+* stack layout:
+
+<img width="660" height="358" alt="image" src="https://github.com/user-attachments/assets/21cc8d38-5a2c-43f1-8897-e8724a324783" />
+
+
