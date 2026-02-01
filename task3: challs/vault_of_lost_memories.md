@@ -151,5 +151,6 @@ with dword_... following from the memory:
 ````
 ascii table:
 
-<img width="960" height="639" alt="image" src="https://github.com/user-attachments/assets/e28e305d-900f-49de-9bf2-a4b801ef4d05" />
+<img width="873" height="578" alt="image" src="https://github.com/user-attachments/assets/0c61380c-e108-4439-9165-7af85f7028ab" />
+
 
