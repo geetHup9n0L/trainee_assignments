@@ -149,3 +149,7 @@ with dword_... following from the memory:
 
 .data:0000000000404094 dword_404094    dd 0Ah 
 ````
+ascii table:
+
+<img width="960" height="639" alt="image" src="https://github.com/user-attachments/assets/e28e305d-900f-49de-9bf2-a4b801ef4d05" />
+
