@@ -153,4 +153,36 @@ ascii table:
 
 <img width="873" height="578" alt="image" src="https://github.com/user-attachments/assets/0c61380c-e108-4439-9165-7af85f7028ab" />
 
+reverse scramble code in C:
+````c
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+
+int main() {
+	char password[] = "cLVQjFMjcFDGQ";
+	int xor_key = 53;
+	int mov_left = 10;
+
+	printf("og pass: %s\n", password);
+	for(int i=0;i<strlen(password);i++) {
+		int c = (int)password[i];
+		printf("char: %c, dec: %d\n", c, c);
+		c = c ^ xor_key;
+		if(c >= 'A' && c <= 'Z') {
+			c = (c - 65 - mov_left + 26) % 26 + 65;
+		} else if (c >= 'a' && c <= 'z') {
+			c = (c - 97 - mov_left + 26) % 26 + 97;
+		}
+		password[i] = (char)c;
+	}
+
+	printf("\npassword: %s\n", password);
+	return 0;
+}
+````
+Output:
+
+<img width="658" height="303" alt="image" src="https://github.com/user-attachments/assets/3a4a78e6-5c82-4ad7-baaa-3c2c8895f0c8" />
+<img width="656" height="314" alt="image" src="https://github.com/user-attachments/assets/b8981381-03f9-4b88-bf3e-74c93fca604e" />
 
