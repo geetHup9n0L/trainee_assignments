@@ -5,7 +5,7 @@ file: `chal`
 RELRO           STACK CANARY      NX            PIE             RPATH      RUNPATH      Symbols   FORTIFY  Fortified       Fortifiable     FILE
 Partial RELRO   Canary found      NX enabled    No PIE          No RPATH   No RUNPATH   No Symbols  No     0               3               chal
 ```
-assembly code: `chal`
+assembly code tu ghidra: `chal`
 ```c
 undefined4 main(void)
 {
@@ -105,6 +105,47 @@ void vuln(void)
   }
   return;
 }
-
-
 ```
+tu IDA:
+````c
+__int64 game()
+{
+  char char_1; // [rsp+7h] [rbp-39h]
+  unsigned int i; // [rsp+8h] [rbp-38h]
+  int j; // [rsp+Ch] [rbp-34h]
+  char buffer[40]; // [rsp+10h] [rbp-30h] BYREF
+  unsigned __int64 canary; // [rsp+38h] [rbp-8h]
+
+  canary = __readfsqword(0x28u);
+
+  for ( i = 0; i <= 31; i += 4 )
+    *(_DWORD *)&buffer[i] = 0;
+
+  puts("Welcome to the digital vault of lost memories! ");
+  puts("Enter the passcode to enter the lost memory world: ");
+  printf(">>> ");
+  fflush(stdout);
+  fgets(buffer, 32, stdin);
+  buffer[strlen(buffer) - 1] = 0;
+  for ( j = 0; buffer[j]; ++j )
+  {
+    char_1 = buffer[j];
+    if ( ((*__ctype_b_loc())[char_1] & 0x100) != 0 )
+    {
+      buffer[j] = (char_1 - 65 + dword_404094) % 26 + 65;
+    }
+    else if ( ((*__ctype_b_loc())[char_1] & 0x200) != 0 )
+    {
+      buffer[j] = (char_1 - 97 + dword_404094) % 26 + 97;
+    }
+    buffer[j] ^= dword_404090;
+  }
+  return (unsigned int)-(memcmp("cLVQjFMjcFDGQ", buffer, 0xDuLL) != 0);
+}
+
+with dword_... following from the memory:
+
+.data:0000000000404090 dword_404090    dd 35h                  ; DATA XREF: game+18D↑r
+
+.data:0000000000404094 dword_404094    dd 0Ah 
+````
