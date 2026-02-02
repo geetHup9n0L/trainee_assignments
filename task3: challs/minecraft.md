@@ -129,3 +129,5 @@ ____
 Tai lieu:
 
 https://sashactf.gitbook.io/pwn-notes/ctf-writeups/htb-business-2024/no-gadgets
+
+https://motasemhamdan.medium.com/hackthebox-no-gadgets-writeup-binary-exploitation-ctf-bdd6c4984e88
