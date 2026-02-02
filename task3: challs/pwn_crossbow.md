@@ -71,3 +71,22 @@ void target_dummy(long buffer)
 
 
 ```
+Diem dang chu y:
+````c
+void training(void)
+{
+  undefined1 buffer [32];
+  target_dummy(buffer);
+}
+
+void target_dummy(long buffer)
+{
+  scanf("%d%*c",input);
+
+  buffer_ptr = (long *)((long)input[0] * 8 + buffer);
+  memory = calloc(1,128);
+  *buffer_ptr = (long)memory;
+
+  fg = fgets_unlocked(*(char **)(buffer + (long)input[0] * 8),128,(FILE *)__stdin_FILE);
+}
+````
