@@ -61,20 +61,22 @@ int main(void) {
   }
 }
 ```
-* stack pivot:
+* ham ``gets`` in main():
 ````asm
    0x000000000040125f <+163>:   lea    rax,[rbp-0x40]
    0x0000000000401263 <+167>:   mov    rdi,rax
    0x0000000000401266 <+170>:   call   0x401050 <gets@plt>
 ````
+
+* stack layout:
+
+<img width="660" height="358" alt="image" src="https://github.com/user-attachments/assets/21cc8d38-5a2c-43f1-8897-e8724a324783" />
+
 * offset: ``[rbp - 0x40]``
 ````python
 pwndbg> p/x 0x7fffffffdcc0 - 0x7fffffffdc80
 $7 = 0x40
 ````
-* stack layout:
-
-<img width="660" height="358" alt="image" src="https://github.com/user-attachments/assets/21cc8d38-5a2c-43f1-8897-e8724a324783" />
 
 * got, writable section:
 <img width="662" height="406" alt="image" src="https://github.com/user-attachments/assets/f0e16032-73ea-4c2a-b45c-5c8f5c0b9d78" />
