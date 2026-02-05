@@ -72,6 +72,11 @@ int main() {
 
 <img width="659" height="243" alt="image" src="https://github.com/user-attachments/assets/03fad648-619a-4e8c-aded-d75f70c1cac8" />
 
+<img width="660" height="489" alt="image" src="https://github.com/user-attachments/assets/c6e2d9f1-0627-423d-9058-30275b7f46fa" />
+
+<img width="653" height="524" alt="image" src="https://github.com/user-attachments/assets/6ae4173a-26ac-4f9d-8443-382547f316fb" />
+
+
 script.py:
 ````python
 from pwn import *
