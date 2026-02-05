@@ -70,6 +70,8 @@ int main() {
 * main thread: main()
 * new thread: thread_routine(), read_bytes()
 
+<img width="659" height="243" alt="image" src="https://github.com/user-attachments/assets/03fad648-619a-4e8c-aded-d75f70c1cac8" />
+
 script.py:
 ````python
 from pwn import *
