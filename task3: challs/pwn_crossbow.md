@@ -90,3 +90,5 @@ void target_dummy(long buffer)
   fg = fgets_unlocked(*(char **)(buffer + (long)input[0] * 8),128,(FILE *)__stdin_FILE);
 }
 ````
+<img width="804" height="813" alt="image" src="https://github.com/user-attachments/assets/96a11c42-56a0-44f0-bee0-1737e690f062" />
+
