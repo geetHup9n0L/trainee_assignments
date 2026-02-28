@@ -173,8 +173,6 @@ Trước hết, tính index của `name` (nơi chứa payload)
 
 * command:
 
-<img width="391" height="293" alt="image" src="https://github.com/user-attachments/assets/2341725d-7c67-4ca5-a91e-dc76c7133df0" />
-
 <img width="427" height="464" alt="image" src="https://github.com/user-attachments/assets/e841de62-59a6-4a55-ba67-ead55b3c2032" />
 
 ```c
