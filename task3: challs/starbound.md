@@ -167,7 +167,9 @@ Hình như không khả dụng vì chương trình chạy 32-bit hoạt động 
 Trước hết, tính index của `name` (nơi chứa payload)
 
 <img width="362" height="118" alt="image" src="https://github.com/user-attachments/assets/87a7b2de-ef90-4f9c-8046-ab09e5482314" />
+
 <img width="391" height="293" alt="image" src="https://github.com/user-attachments/assets/2341725d-7c67-4ca5-a91e-dc76c7133df0" />
+
 <img width="427" height="464" alt="image" src="https://github.com/user-attachments/assets/e841de62-59a6-4a55-ba67-ead55b3c2032" />
 
 ```
