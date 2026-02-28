@@ -108,11 +108,59 @@ undefined4 main(void)
   ```
   vì chỉ có 1 check là `idx = 0`, nên có khả năng out of bound
 
+Bên cạnh đấy trong otption `cmd_settings` có:
+```c
+void show_settings_menu(void)
+{
+  int indx;
+  
+  if (DAT_080580cc != 0) {
+    cmd_view();
+  }
+  puts("\n-+STARBOUND v1.0: SETTINGS+-");
+  puts("  0. Exit");
+  puts("  1. Back");
+  puts("  2. Name");
+  puts("  3. IP");
+  puts("  4. Toggle View");
+  printf(1,&DAT_0804a792);
+  for (indx = 0; indx < 10; indx = indx + 1) {
+    (&commands)[indx] = cmd_nop;
+  }
+  _DAT_08058158 = cmd_go_back;
+  _DAT_0805815c = cmd_set_name;
+  _DAT_08058160 = cmd_set_ip;
+  _DAT_08058164 = cmd_set_autoview;
+  return;
+}
+```
+```c
+void cmd_set_name(void)
+{
+  int len;
+  
+  printf(1,"Enter your name: ");
+  len = readn(&name,100);
+  *(undefined1 *)((int)&DAT_080580cc + len + 3) = 0;
+  return;
+}
+```
+* `readn(&name,100);`: đọc 100 bytes vào biến global `name`
 
+==> Có thể nhét payload tạm vào phần memoery này, và tận dụng lỗ hổng out of bound trên đến thực thi payload tại vị trí memory này. 
 
+Vì binary file có **NX enabled**, nên không dùng shellcode cho payload. Mà thay vào đó dùng ROP.
 
-
-
+Tìm kiếm gadgets có sẵn từ binary:
+```c
+└─$ ropper --file starbound | grep "pop"
+```
+```asm
+0x080494dc: pop edi; ret; 
+0x080494db: pop esi; pop edi; ret; 
+0x080499ef: pop esi; ret;
+0x08048922: ret;
+```
 
 
 
