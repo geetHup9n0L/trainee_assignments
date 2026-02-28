@@ -1,4 +1,4 @@
-### Thông tin file:
+<img width="391" height="293" alt="image" src="https://github.com/user-attachments/assets/23a185dd-3c5c-455b-a31b-cc90a63ecb4e" />### Thông tin file:
 
 ```c
 └─$ file starbound
@@ -162,6 +162,21 @@ Tìm kiếm gadgets có sẵn từ binary:
 0x08048922: ret;
 ```
 Hình như không khả dụng vì chương trình chạy 32-bit hoạt động kiểu khác
+
+### Khai thác:
+Trước hết, tính index của `name` (nơi chứa payload)
+
+<img width="362" height="118" alt="image" src="https://github.com/user-attachments/assets/87a7b2de-ef90-4f9c-8046-ab09e5482314" />
+<img width="391" height="293" alt="image" src="https://github.com/user-attachments/assets/2341725d-7c67-4ca5-a91e-dc76c7133df0" />
+<img width="427" height="464" alt="image" src="https://github.com/user-attachments/assets/e841de62-59a6-4a55-ba67-ead55b3c2032" />
+
+```
+# Thấy mỗi function chiếm 4 bytes
+offset = (08058154 - 080580d0) / 4
+       = 33
+# Nhưng mà vì `name` đứng trước `command` nên offset sẽ là:
+offset = -33
+```
 
 ____
 script.py:
