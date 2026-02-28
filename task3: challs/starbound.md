@@ -222,6 +222,11 @@ puts_plt
 main_addr // quay lai menu()
 puts_got 
 ```
+```asm
+0x80580d0:     0x 0804a61b 08048b90      0x 00000000 0805509c
+```
+<img width="797" height="77" alt="image" src="https://github.com/user-attachments/assets/a35918f9-ce21-4863-a96d-0af90e0d5190" />
+
 * có được libc leak thì tính **libc.address**
 
 <img width="805" height="324" alt="image" src="https://github.com/user-attachments/assets/28ca9625-b250-436f-837b-b4621ed6fe12" />
