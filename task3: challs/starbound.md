@@ -1,4 +1,4 @@
-Thông tin file:
+### Thông tin file:
 
 ```c
 └─$ file starbound
@@ -26,7 +26,7 @@ Output file:
 <img width="821" height="580" alt="image" src="https://github.com/user-attachments/assets/8a90a8bb-dfde-476e-8570-54982f7805e1" />
 
 ____
-Code từ ghidra:
+### Code từ ghidra:
 
 `main()`:
 ```c
