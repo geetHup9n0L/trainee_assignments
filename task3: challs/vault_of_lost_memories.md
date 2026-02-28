@@ -312,9 +312,17 @@ libc.address = leak_libc - 0x29ca8
   
 * không làm cho system() bị corrupted, mà vẫn bypass được cái system()
 
+<img width="807" height="166" alt="image" src="https://github.com/user-attachments/assets/ef5705df-4109-4e40-96b2-89a5ae12b7e7" />
+
 * `vuln()` đọc đến RIP và thực thi dòng ROP mà mình overwrite từ trước
 
-* được shell 
+<img width="819" height="290" alt="image" src="https://github.com/user-attachments/assets/0cc361a0-34b3-4174-9f59-03eb5d696763" />
+
+* được shell:
+
+<img width="810" height="306" alt="image" src="https://github.com/user-attachments/assets/90fddff2-db3b-4304-a341-687fc82ae939" />
+
+<img width="809" height="211" alt="image" src="https://github.com/user-attachments/assets/958313de-459a-43af-ba4f-04998411b548" />
 
 ___
 Final script:
