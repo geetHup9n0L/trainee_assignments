@@ -227,7 +227,7 @@ Ta quan sát output từ chương trình:
 <img width="657" height="316" alt="image" src="https://github.com/user-attachments/assets/d22e07dc-ee95-48ae-94ff-9de73185c5d7" />
 
 ___
-### Bước khai thác:
+## Bước khai thác:
 
 Code của phần chương trình có lỗ hổng:
 ```c
@@ -254,13 +254,13 @@ void vuln(void)
   return;
 }
 ```
-**Khai thác:**
+### **Khai thác:**
 - `fgets(buffer,128,stdin);`: đọc input với size bé hơn size buffer --> ~không có BOF~
 - `printf(buffer);`: lỗ hổng **formatstring**; dùng `%p` để leak và `%n` để overwrite
 - Vì file là `Partial RELRO`, ta có thể dùng formatstring write để overwrite một số chức năng theo ý của mình
 
-**Ý tưởng:**
-B1: dùng `%n` overwrite GOT của system -> địa chỉ của `vuln()` (vì **NO PIE** nên địa chỉ vuln() cố định)
+### **Ý tưởng:**
+**B1:** dùng `%n` overwrite GOT của system -> địa chỉ của `vuln()` (vì **NO PIE** nên địa chỉ vuln() cố định)
 
 * mỗi lần thực thi system() là chạy lại vuln() từ đầu
 
@@ -274,7 +274,7 @@ payload = fmtstr_payload(6, {exe.got['system']: vuln_addr})
 ```
 <img width="811" height="168" alt="image" src="https://github.com/user-attachments/assets/7ab8ba91-1a5a-48fb-a05c-bdcc443f76d9" />
 
-B2: dùng `%p` để leak thông tin như: địa chỉ stack, địa chỉ libc
+**B2:** dùng `%p` để leak thông tin như: địa chỉ stack, địa chỉ libc
 
 * bởi vì overwrite **system@got** thành từ đầu của **vuln()**, sẽ tạo một stack frame mới (push rbp; mov rbp, rsp; sub rsp, 0x90)
 
@@ -298,7 +298,7 @@ libc.address = leak_libc - 0x29ca8
 
 <img width="805" height="243" alt="image" src="https://github.com/user-attachments/assets/69418bea-c71d-4421-a2ec-61c270cbe795" />
 
-B3: dùng `%n` overwrite RIP với ROP gadgets từ libc tính được
+**B3:** dùng `%n` overwrite RIP với ROP gadgets từ libc tính được
 
 <img width="795" height="245" alt="image" src="https://github.com/user-attachments/assets/07c05ca0-dcb1-4ea6-8c99-52c43207a1dc" />
 
@@ -306,7 +306,7 @@ B3: dùng `%n` overwrite RIP với ROP gadgets từ libc tính được
 
 <img width="804" height="277" alt="image" src="https://github.com/user-attachments/assets/85638c33-cafe-47ce-b886-1a32739b6c28" />
 
-B4: dùng `%n` overwrite lại **system@got** (hiện là địa chỉ **vuln()**) thành của `printf` của libc
+**B4:** dùng `%n` overwrite lại **system@got** (hiện là địa chỉ **vuln()**) thành của `printf` của libc
 
 * `system("ls *.pdf")` sẽ thành `printf("ls *.pdf")`, in ra dòng string `"ls *.pdf"`
   
