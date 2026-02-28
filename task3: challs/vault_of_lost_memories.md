@@ -192,7 +192,7 @@ Chạy code `c` và ta được password gốc sau:
 <img width="658" height="303" alt="image" src="https://github.com/user-attachments/assets/3a4a78e6-5c82-4ad7-baaa-3c2c8895f0c8" />
 <img width="656" height="314" alt="image" src="https://github.com/user-attachments/assets/b8981381-03f9-4b88-bf3e-74c93fca604e" />
 
-Chạy thử với binary xem password có đúng không:
+Chạy thử script.py với binary với password trên và leak thử:
 
 `script.py`:
 ````python
@@ -225,8 +225,10 @@ Ta quan sát output từ chương trình:
 <img width="655" height="441" alt="image" src="https://github.com/user-attachments/assets/925c3fdb-5712-46fc-b26f-c8bb76ac4ce6" />
 
 <img width="657" height="316" alt="image" src="https://github.com/user-attachments/assets/d22e07dc-ee95-48ae-94ff-9de73185c5d7" />
+
 ___
 ### Bước khai thác:
+
 Code của phần chương trình có lỗ hổng:
 ```c
 void vuln(void)
