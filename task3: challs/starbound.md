@@ -211,6 +211,19 @@ Ta thử xem hướng exploit đúng ko:
 ==> Có thể khả thi
 
 Giờ đến bước leak libc và dựng ROP:
+* theo cấu trúc 32-bit thì payload phải theo thứ tự:
+```c
+puts_plt
+main_addr 
+puts_got 
+```
+* có được libc leak thì tính libc.address
+* tạo payload tạo shell:
+```
+system
+0xdeadbeef
+bin_sh
+``` 
 
 ____
 script.py:
