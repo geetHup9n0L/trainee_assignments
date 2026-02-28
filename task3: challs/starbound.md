@@ -1,4 +1,4 @@
-<img width="391" height="293" alt="image" src="https://github.com/user-attachments/assets/23a185dd-3c5c-455b-a31b-cc90a63ecb4e" />### Thông tin file:
+### Thông tin file:
 
 ```c
 └─$ file starbound
