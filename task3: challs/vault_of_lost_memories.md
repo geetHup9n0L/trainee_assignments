@@ -260,11 +260,11 @@ void vuln(void)
 - Vì file là `Partial RELRO`, ta có thể dùng formatstring write để overwrite một số chức năng theo ý của mình
 
 **Ý tưởng:**
-* B1: dùng `%n` overwrite GOT của system -> địa chỉ của `vuln()` (vì **NO PIE** nên địa chỉ vuln() cố định)
+B1: dùng `%n` overwrite GOT của system -> địa chỉ của `vuln()` (vì **NO PIE** nên địa chỉ vuln() cố định)
 
---> mỗi lần thực thi system() là chạy lại vuln() từ đầu
+* mỗi lần thực thi system() là chạy lại vuln() từ đầu
 
---> tạo được vòng loop trong vuln(), nhằm tái sử dụng formatstring
+* tạo được vòng loop trong vuln(), nhằm tái sử dụng formatstring
 
 <img width="413" height="112" alt="image" src="https://github.com/user-attachments/assets/54341ce9-b30e-4ea5-a09c-adb230075b65" />
 
@@ -272,35 +272,49 @@ void vuln(void)
 vuln_addr = 0x401448
 payload = fmtstr_payload(6, {exe.got['system']: vuln_addr})
 ```
-* B2: dùng `%p` để leak thông tin như: địa chỉ stack, địa chỉ libc
+<img width="811" height="168" alt="image" src="https://github.com/user-attachments/assets/7ab8ba91-1a5a-48fb-a05c-bdcc443f76d9" />
 
---> bởi vì overwrite **system@got** thành từ đầu của **vuln()**, sẽ tạo một stack frame mới (push rbp; mov rbp, rsp; sub rsp, 0x90)
+B2: dùng `%p` để leak thông tin như: địa chỉ stack, địa chỉ libc
+
+* bởi vì overwrite **system@got** thành từ đầu của **vuln()**, sẽ tạo một stack frame mới (push rbp; mov rbp, rsp; sub rsp, 0x90)
 
 <img width="395" height="110" alt="image" src="https://github.com/user-attachments/assets/18be8763-aea4-40a3-867c-55adebe1b2bc" />
  
---> vì thế, phải căn offset `%{i}$p` để leak cho chuẩn
+* vì thế, phải căn offset `%{i}$p` để leak cho chuẩn
 
 ```python
 payload = b"%p %49$p"
 ```
 
---> leak xong, tính toán ra địa chỉ: libc.address, rip
+* leak xong, tính toán ra địa chỉ: libc.address, rip
 
 ```python
 rip = addr + 0x308
 libc.address = leak_libc - 0x29ca8 
 ```
-* B3: dùng `%n` overwrite RIP với ROP gadgets từ libc tính được
+<img width="813" height="213" alt="image" src="https://github.com/user-attachments/assets/926f18bc-a4f2-4744-bbdb-35d2b8fdd2bd" />
 
-* B4: dùng `%n` overwrite lại **system@got** (hiện là địa chỉ **vuln()**) thành của `printf` của libc
-* 
---> `system("ls *.pdf")` sẽ thành `printf("ls *.pdf")`, in ra dòng string `"ls *.pdf"`
+<img width="804" height="279" alt="image" src="https://github.com/user-attachments/assets/85cb4f93-238a-45de-80b8-d55f7806e70d" />
+
+<img width="805" height="243" alt="image" src="https://github.com/user-attachments/assets/69418bea-c71d-4421-a2ec-61c270cbe795" />
+
+B3: dùng `%n` overwrite RIP với ROP gadgets từ libc tính được
+
+<img width="795" height="245" alt="image" src="https://github.com/user-attachments/assets/07c05ca0-dcb1-4ea6-8c99-52c43207a1dc" />
+
+* phải gửi payload sao cho đủ bé hơn **128 bytes** của **fgets()**
+
+<img width="804" height="277" alt="image" src="https://github.com/user-attachments/assets/85638c33-cafe-47ce-b886-1a32739b6c28" />
+
+B4: dùng `%n` overwrite lại **system@got** (hiện là địa chỉ **vuln()**) thành của `printf` của libc
+
+* `system("ls *.pdf")` sẽ thành `printf("ls *.pdf")`, in ra dòng string `"ls *.pdf"`
   
---> không làm cho system() bị corrupted, mà vẫn bypass được cái system()
+* không làm cho system() bị corrupted, mà vẫn bypass được cái system()
 
---> `vuln()` đọc đến RIP và thực thi dòng ROP mà mình overwrite từ trước
+* `vuln()` đọc đến RIP và thực thi dòng ROP mà mình overwrite từ trước
 
---> được shell 
+* được shell 
 
 ___
 Final script:
