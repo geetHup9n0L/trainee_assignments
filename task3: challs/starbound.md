@@ -161,9 +161,33 @@ Tìm kiếm gadgets có sẵn từ binary:
 0x080499ef: pop esi; ret;
 0x08048922: ret;
 ```
+Hình như không khả dụng vì chương trình chạy 32-bit hoạt động kiểu khác
 
+____
+script.py:
 
+```python
+from pwn import *
 
+context.binary = exe = ELF("./starbound", checksec=False)
+context.log_level = "debug"
+
+def GDB():
+	gdb.attach(p, gdbscript='''
+		br main
+		br *main + 58
+		''')
+
+p = process(exe.path)
+GDB()
+
+p.recvuntil(b"> ")
+p.sendline(b"3")
+
+p.interactive()
+```
+
+___
 
 
 
