@@ -1,4 +1,4 @@
-<img width="784" height="128" alt="image" src="https://github.com/user-attachments/assets/f142f1aa-ff7a-4e18-8e7b-bab17da527a6" />Thông tin file:
+Thông tin file:
 
 ```c
 └─$ file starbound
@@ -88,6 +88,7 @@ undefined4 main(void)
   }
   ```
   <img width="784" height="128" alt="image" src="https://github.com/user-attachments/assets/f7e7cede-9b66-43d6-be7b-f374b5737f02" />
+  <img width="784" height="128" alt="image" src="https://github.com/user-attachments/assets/f142f1aa-ff7a-4e18-8e7b-bab17da527a6" />
 
 * `readn(buffer,256);`: đọc input từ user với menu trên thông qua:
   ```
