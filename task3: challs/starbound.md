@@ -1,33 +1,24 @@
-Dockerfile:
+Thông tin file:
+
+```c
+└─$ file starbound
+starbound: ELF 32-bit LSB executable, Intel i386, version 1 (SYSV), dynamically linked, interpreter /lib/ld-linux.so.2, for GNU/Linux 2.6.24, BuildID[sha1]=5a960d92ab1e8594d377bd96eb6ea49980f412a9, not stripped
 ```
-FROM i386/ubuntu:16.04
-
-USER root
-
-RUN apt-get update && apt-get install -y \
-    gdb git python3 python3-pip python3-dev \
-    file strace ltrace patchelf vim tmux wget curl \
-    build-essential libssl-dev libffi-dev gcc-multilib
-
-RUN python3 -m pip install --upgrade "pip < 21.0" "setuptools < 45.0"
-
-RUN python3 -m pip install pwntools==4.8.0
-
-RUN wget -q -O /root/.gdbinit-gef.py https://github.com/hugsy/gef/raw/main/gef.py && \
-    echo "source /root/.gdbinit-gef.py" >> /root/.gdbinit
-
-RUN useradd -m ctf
-COPY starbound /home/ctf/starbound
-COPY flag.txt /home/ctf/flag.txt
-RUN chmod +x /home/ctf/starbound && \
-    cp /root/.gdbinit /home/ctf/.gdbinit && \
-    cp /root/.gdbinit-gef.py /home/ctf/.gdbinit-gef.py && \
-    chown -R ctf:ctf /home/ctf/
-
-USER ctf
-WORKDIR /home/ctf
+```c
+└─$ checksec --file=starbound
+RELRO           STACK CANARY      NX            PIE             RPATH      RUNPATH      Symbols   FORTIFY  Fortified       Fortifiable     FILE
+Partial RELRO   No canary found   NX enabled    No PIE          No RPATH   RW-RUNPATH   151 Symbols  Yes   4               8               starbound
 ```
-Runs with:
+
+Để chạy được file, ta dùng patchelf:
 ```
-docker run --rm -it --cap-add=SYS_PTRACE --security-opt seccomp=unconfined pwn_env tmux
+└─$ ls                                
+libcrypto.so.1.0.0  starbound
 ```
+```
+└─$ patchelf --set-rpath . ./starbound
+```
+
+Output file:
+
+<img width="821" height="580" alt="image" src="https://github.com/user-attachments/assets/8a90a8bb-dfde-476e-8570-54982f7805e1" />
