@@ -14,7 +14,7 @@ Partial RELRO   No canary found   NX enabled    No PIE          No RPATH   RW-RU
 * `Partial RELRO`: có thể overwrite GOT
 * `No pie`: địa chỉ trong binary là cố định
 
-Để chạy được file, ta dùng patchelf:
+Để chạy được file, ta dùng patchelf với libc thiều từ bản ubuntu **16.04**:
 ```c
 └─$ ls                                
 libcrypto.so.1.0.0  starbound
@@ -239,6 +239,7 @@ script.py:
 ```python
 from pwn import *
 
+libc = ELF('/lib/i386-linux-gnu/libc.so.6', checksec=False)
 context.binary = exe = ELF("./starbound", checksec=False)
 context.log_level = "debug"
 
@@ -248,6 +249,7 @@ def GDB():
 		br *main + 58
 
 		x/4gx 0x080580d0
+		gots puts
 		''')
 
 p = process(exe.path)
