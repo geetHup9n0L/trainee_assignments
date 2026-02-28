@@ -261,7 +261,9 @@ void vuln(void)
 
 **Ý tưởng:**
 * B1: dùng `%n` overwrite GOT của system -> địa chỉ của `vuln()` (vì **NO PIE** nên địa chỉ vuln() cố định)
+
 --> mỗi lần thực thi system() là chạy lại vuln() từ đầu
+
 --> tạo được vòng loop trong vuln(), nhằm tái sử dụng formatstring
 
 <img width="413" height="112" alt="image" src="https://github.com/user-attachments/assets/54341ce9-b30e-4ea5-a09c-adb230075b65" />
@@ -271,15 +273,19 @@ vuln_addr = 0x401448
 payload = fmtstr_payload(6, {exe.got['system']: vuln_addr})
 ```
 * B2: dùng `%p` để leak thông tin như: địa chỉ stack, địa chỉ libc
+
 --> bởi vì overwrite **system@got** thành từ đầu của **vuln()**, sẽ tạo một stack frame mới (push rbp; mov rbp, rsp; sub rsp, 0x90)
 
 <img width="395" height="110" alt="image" src="https://github.com/user-attachments/assets/18be8763-aea4-40a3-867c-55adebe1b2bc" />
  
 --> vì thế, phải căn offset `%{i}$p` để leak cho chuẩn
+
 ```python
 payload = b"%p %49$p"
 ```
+
 --> leak xong, tính toán ra địa chỉ: libc.address, rip
+
 ```python
 rip = addr + 0x308
 libc.address = leak_libc - 0x29ca8 
@@ -287,9 +293,13 @@ libc.address = leak_libc - 0x29ca8
 * B3: dùng `%n` overwrite RIP với ROP gadgets từ libc tính được
 
 * B4: dùng `%n` overwrite lại **system@got** (hiện là địa chỉ **vuln()**) thành của `printf` của libc
+* 
 --> `system("ls *.pdf")` sẽ thành `printf("ls *.pdf")`, in ra dòng string `"ls *.pdf"`
+  
 --> không làm cho system() bị corrupted, mà vẫn bypass được cái system()
+
 --> `vuln()` đọc đến RIP và thực thi dòng ROP mà mình overwrite từ trước
+
 --> được shell 
 
 ___
