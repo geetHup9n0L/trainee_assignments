@@ -15,7 +15,9 @@ free(ptr): Releases allocated memory back to the system to prevent memory leaks.
 
 
 
+docs:
 
+https://www.youtube.com/watch?v=S7TPgGCZdeU&t=26s
 
 
 
