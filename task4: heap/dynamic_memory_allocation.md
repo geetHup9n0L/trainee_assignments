@@ -8,6 +8,11 @@ calloc(n, size): Allocates multiple blocks of memory, initializing all bytes to 
 realloc(ptr, new_size): Resizes previously allocated memory blocks.
 free(ptr): Releases allocated memory back to the system to prevent memory leaks.
 
+### Ly thuyet chu
+
+### Potential vuln
+
+### Bieu dien tren memory + gdbpwndbg
 
 
 
