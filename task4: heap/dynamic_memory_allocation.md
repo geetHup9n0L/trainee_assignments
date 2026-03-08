@@ -185,6 +185,8 @@ https://azeria-labs.com/heap-exploitation-part-1-understanding-the-glibc-heap-im
 
 https://guyinatuxedo.github.io/25-heap/index.html
 
+https://www.youtube.com/watch?v=xDVC3wKjS64&t=702s
+
 
 
 
