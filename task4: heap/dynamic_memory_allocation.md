@@ -122,7 +122,7 @@ bk_nextsize: 0x00
 <img width="814" height="683" alt="image" src="https://github.com/user-attachments/assets/c68ba6d3-736a-4d2a-a493-bdae4b5be7dc" />
 
 
-### Bins
+### Bins (Ngăn xếp)
 Khi không dùng đến phần bộ nhớ được cấp phát động nữa, ta giải phỏng với hàm `free()`. Hàm `free()` không làm chunk biến mất, mà đưa nó vào các **danh sách bins** Với mục đích là có thể tái sử dụng các khối bộ nhớ này cho những lần cấp phát động bằng malloc() tiếp theo. Gọi là freed chunks. Khi mà chương trình yêu cầu cấp phát bộ nhớ, phần heap sẽ kiểm tra các bin có chưa chunk nào đủ lớn để đáp ứng yêu cầu cấp phát trên, nếu tìm thấy sẽ loại bỏ chunk khỏi bin và trả về địa chỉ của vùng nhớ về như malloc().
 
 free flow:
@@ -161,9 +161,72 @@ else
 Có các loại chunks thứ tự tương ứng với hiệu năng và chức năng sau:
 
 1. tcache
+	* Nó là cache riêng của thread hoặc là mỗi thread có một tcache riêng, còn với fastbin thì bao nhiêu thread cũng chỉ dùng 1 fastbin. Xuất hiện ở bản libc 2.26 trở đi. Giống fastbin, là theo phương pháp LIFO. Một list tcache chỉ giữ được 7 chunk cùng một lúc và có tổng cộng 64 tcache lists với `idx = 0 -> 63` tương ứng với các kích thước trong dải `0x20 - 0x410`.
+	```asm
+ 	pwndbg> heap -v
+	Allocated chunk | PREV_INUSE
+	Addr: 0x555555559000
+	prev_size: 0x00
+	size: 0x290 (with flag bits: 0x291)
+	fd: 0x10000
+	bk: 0x00
+	fd_nextsize: 0x00
+	bk_nextsize: 0x00
+	
+	Free chunk (tcachebins) | PREV_INUSE
+	Addr: 0x555555559290
+	prev_size: 0x00
+	size: 0x30 (with flag bits: 0x31)
+	fd: 0x555555559
+	bk: 0x230686f4a65f4952
+	fd_nextsize: 0x00
+	bk_nextsize: 0x00
+	
+	Allocated chunk | PREV_INUSE
+	Addr: 0x5555555592c0
+	prev_size: 0x00
+	size: 0x30 (with flag bits: 0x31)
+	fd: 0x00
+	bk: 0x00
+	fd_nextsize: 0x00
+	bk_nextsize: 0x00
+ 	...
+ 	```
+ 	```asm
+	pwndbg> bins
+	tcachebins
+	0x30 [  1]: 0x5555555592a0 ◂— 0
+	fastbins
+	empty
+	unsortedbin
+	empty
+	smallbins
+	empty
+	largebins
+	empty
+  	```
+2. `fastbin`
+	* Nếu free một chunk có kích thước từ `0x20 -> 0x80`, thì cái chunk sẽ được đưa vào ngăn xếp fastbin. Fastbin có tổng 7 linked lists từ `idx = 0 -> 6`  tương ứng với size của freed chunk. Để khi lần malloc() tới với kích thước trong khoảng 0x20 -> 0x80 sẽ kiểm tra chunk thỏa mãn trong fastbin và lấy nó. Chú ý là lúc free chunk là bao gồm cả metadata + userdata, nên phần chunk được free không phải là kích thước ban đầu lúc malloc() (Ví dụ: malloc(0x20) -> chunk = 0x30 -> freed chunk vào bins = 0x30).
+	```c
+	int main() {
+		char* p1 = malloc(0x10);
+		free(p1);
+	
+		return 0;
+	}
+	```
+	```asm
+	────────────────────── Fastbins for arena 0x7ffff7dd1b20 ──────────────────────
+	Fastbins[idx=0, size=0x10]  ←  Chunk(addr=0x602010, size=0x20, flags=PREV_INUSE)  ←  Chunk(addr=0x602030, size=0x20, flags=PREV_INUSE)
+	Fastbins[idx=1, size=0x20]  ←  Chunk(addr=0x602050, size=0x30, flags=PREV_INUSE)
+	Fastbins[idx=2, size=0x30]  ←  Chunk(addr=0x602080, size=0x40, flags=PREV_INUSE)
+	Fastbins[idx=3, size=0x40]  ←  Chunk(addr=0x6020c0, size=0x50, flags=PREV_INUSE)
+	Fastbins[idx=4, size=0x50]  ←  Chunk(addr=0x602110, size=0x60, flags=PREV_INUSE)
+	Fastbins[idx=5, size=0x60]  ←  Chunk(addr=0x602170, size=0x70, flags=PREV_INUSE)
+	Fastbins[idx=6, size=0x70]  ←  Chunk(addr=0x6021e0, size=0x80, flags=PREV_INUSE)
 
-2. fastbin
-
+ 	```
+ 	* Fastbin theo phương thức LIFO, chunk cuối được đẩy vào fastbin thì cũng là chunk đầu tiên được lấy ra nếu malloc() yêu cầu
 3. unsorted bin
 
 4. smallbin
