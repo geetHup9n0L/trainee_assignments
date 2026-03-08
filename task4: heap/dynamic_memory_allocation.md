@@ -19,7 +19,7 @@ So với Stack, mỗi vùng nhớ được thể hiện = stack frame, thì trê
 
 Các functions trả về con trỏ `void *` chứa địa chỉ byte đầu tiên của vùng nhớ được cấp phát 
 
-Khác với stack, ...
+Khác với stack (khi return thì bỏ qua phần memory trong stack frame, có thể overwrite phần memory đấy khi một function khác được gọi), bất kỳ bộ nhớ nào trên heap được cấp phát động vẫn sẽ trong trạng thái cấp phát xuyên suốt chương trình. Vì vậy, yêu cầu phải thủ công giải phóng phần bộ nhớ đấy với:
 * `free(ptr)`: Giải phóng vùng bộ nhớ được cấp phát trước đó, tránh bị rò rỉ thông tin từ bộ nhớ. 
 
 Khi được cấp phát động, mỗi heap chunk không chỉ bao gồm mỗi bộ nhớ yêu cầu được cấp phát (giả sử 0x10 bytes - malloc(0x10)) trên heap mà còn bào gồm cả heap metadata. Phần metadata/header nằm trước phần chunk và chiếm 0x10 bytes theo cấu trúc x64:
