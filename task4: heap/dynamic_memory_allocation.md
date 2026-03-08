@@ -125,6 +125,39 @@ bk_nextsize: 0x00
 ### Bins
 Khi không dùng đến phần bộ nhớ được cấp phát động nữa, ta giải phỏng với hàm `free()`. Hàm `free()` không làm chunk biến mất, mà đưa nó vào các **danh sách bins** Với mục đích là có thể tái sử dụng các khối bộ nhớ này cho những lần cấp phát động bằng malloc() tiếp theo. Gọi là freed chunks. Khi mà chương trình yêu cầu cấp phát bộ nhớ, phần heap sẽ kiểm tra các bin có chưa chunk nào đủ lớn để đáp ứng yêu cầu cấp phát trên, nếu tìm thấy sẽ loại bỏ chunk khỏi bin và trả về địa chỉ của vùng nhớ về như malloc().
 
+free flow:
+````c
+if (tcache chưa đầy)
+    push vào tcache
+
+else if (fastbin size)
+    push fastbin
+
+else
+    đưa vào unsorted bin
+    có thể coalesce
+````
+malloc flow:
+````c
+if (tcache có)
+    return tcache chunk
+
+if (fastbin có)
+    return fastbin chunk
+
+if (smallbin có)
+    return smallbin chunk
+
+if (unsorted bin có)
+    xử lý
+
+if (largebin có)
+    best-fit
+
+else
+    dùng top chunk
+````
+
 Có các loại chunks thứ tự tương ứng với hiệu năng và chức năng sau:
 
 1. tcache
