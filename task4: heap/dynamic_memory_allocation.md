@@ -38,7 +38,37 @@ ptr = malloc(0x10)
   * `NON_MAIN_ARENA (0x4)`	thuộc arena khác 
 * `chunk`: ptr trỏ đến vị trí này, và đây là nơi chứa data từ chương trình, có kích thước đúng = kích thước yêu cầu cấp phát ban đầu của malloc() 
 
-### Bieu dien tren memory + gdbpwndbg:
+Code trong c:
+```
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+int main() {
+	char *ptr;
+	ptr = malloc(0x10);
+
+	strcpy(ptr, "Long");
+
+	return 0;
+}
+```
+Chạy trong gdb-pwndbg và tìm phần heap chunk tương ứng:
+```asm
+pwndbg> search Long
+Searching for byte: b'Long'
+heap            0x555555555155 outsd dx, dword ptr [rsi]
+[heap]          0x5555555592a0 0x676e6f4c /* 'Long' */
+```
+```
+pwndbg> x/4xg 0x555555559290
+0x555555559290: 0x0000000000000000      0x0000000000000021  // prev_size = 0 | chunk_size = 0x20 ; flag = 0x01
+0x5555555592a0: 0x00000000676e6f4c      0x0000000000000000  // chunk_data = "Long"
+```
+<img width="805" height="818" alt="image" src="https://github.com/user-attachments/assets/e253b6c7-0af1-45e1-81d7-7b271f867802" />
+
+
+### Bins
 
 
 ### Những lỗ hổng liên quan đến heap:
