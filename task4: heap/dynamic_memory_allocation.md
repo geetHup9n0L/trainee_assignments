@@ -39,7 +39,7 @@ ptr = malloc(0x10)
 * `chunk`: ptr trỏ đến vị trí này, và đây là nơi chứa data từ chương trình, có kích thước đúng = kích thước yêu cầu cấp phát ban đầu của malloc() 
 
 Code trong c:
-```
+```c
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -60,12 +60,66 @@ Searching for byte: b'Long'
 heap            0x555555555155 outsd dx, dword ptr [rsi]
 [heap]          0x5555555592a0 0x676e6f4c /* 'Long' */
 ```
-```
+```asm
 pwndbg> x/4xg 0x555555559290
 0x555555559290: 0x0000000000000000      0x0000000000000021  // prev_size = 0 | chunk_size = 0x20 ; flag = 0x01
-0x5555555592a0: 0x00000000676e6f4c      0x0000000000000000  // chunk_data = "Long"
+0x5555555592a0: 0x00000000676e6f4c      0x0000000000000000  // chunk_data = "Long" <== địa chỉ malloc() trả về cho ptr
 ```
+hoặc với lệnh `heap` cho ra thông tin cụ thể hơn:
+```asm
+pwndbg> heap
+Allocated chunk | PREV_INUSE
+Addr: 0x555555559000
+Size: 0x290 (with flag bits: 0x291)
+
+Allocated chunk | PREV_INUSE
+Addr: 0x555555559290
+Size: 0x20 (with flag bits: 0x21)
+
+Top chunk | PREV_INUSE
+Addr: 0x5555555592b0
+Size: 0x20d50 (with flag bits: 0x20d51)
+```
+```asm
+pwndbg> heap -v
+Allocated chunk | PREV_INUSE
+Addr: 0x555555559000
+prev_size: 0x00
+size: 0x290 (with flag bits: 0x291)
+fd: 0x00
+bk: 0x00
+fd_nextsize: 0x00
+bk_nextsize: 0x00
+
+Allocated chunk | PREV_INUSE
+Addr: 0x555555559290
+prev_size: 0x00
+size: 0x20 (with flag bits: 0x21)
+fd: 0x676e6f4c
+bk: 0x00
+fd_nextsize: 0x00
+bk_nextsize: 0x20d51
+
+Top chunk | PREV_INUSE
+Addr: 0x5555555592b0
+prev_size: 0x00
+size: 0x20d50 (with flag bits: 0x20d51)
+fd: 0x00
+bk: 0x00
+fd_nextsize: 0x00
+bk_nextsize: 0x00
+```
+* Chunk đầu tiền với size 0x290 là heap chunk được glibc cấp phát cho internal structures (glibc gọi malloc() lúc đầu chương trình)
+* Chunk với size 0x20 là mình cấp phát động
+* `Top chunk`: phần memory heap còn lại chưa dùng. Khi dùng malloc() sẽ lấy memory từ đây, top chunk khi đấy cũng giảm tương ứng
+  ```
+  [ new chunk ] + [ smaller top chunk ]
+  ```
+  (hình dung: heap - top chunk, stack - rsp)
+
 <img width="805" height="818" alt="image" src="https://github.com/user-attachments/assets/e253b6c7-0af1-45e1-81d7-7b271f867802" />
+
+<img width="814" height="683" alt="image" src="https://github.com/user-attachments/assets/c68ba6d3-736a-4d2a-a493-bdae4b5be7dc" />
 
 
 ### Bins
