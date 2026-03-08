@@ -9,7 +9,7 @@ ___
 ### Cấp phát động và Heap (Dynamic memory allocation)
 Là một quá trình cấp phát bộ nhớ từ heap tại thời gian thực thi của chương trình (at runtime), thay vì là tại thời gian biên dịch chương trình (at compile time). Điều này cho phép chương trình đang chạy có thể linh hoạt trong việc quản lý bộ nhớ dựa trên kích thước đầu vào (input) khác nhau, mà không bị cố định độ lớn của bộ nhớ ngày từ đầu chương trình. Thường được sử dụng trong C/C++ để tương tác với bộ nhớ heap.
 
-So với Stack, mỗi vùng nhớ được thể hiện = stack frame, thì trên heap mỗi vùng nhớ gọi là heap 
+So với Stack, mỗi vùng nhớ được thể hiện = stack frame, thì trên heap mỗi vùng nhớ gọi là heap chunk
 
 **Có các functions sau để cấp phát bộ nhớ trên heap:**
 
@@ -32,7 +32,10 @@ ptr = malloc(0x10)
 0x10:   "long"     - Content of chunk
 ```
 * `prev_size`: thông tin về kích thước chunk trước đã được giải phóng (free())
-* `chunk_size`: kích thương của heap chunk, to hơn so với kích thước cấp phát mong muốn với malloc() (+ 0x10 bytes phần metadata)
+* `chunk_size`: kích thương của heap chunk, to hơn so với kích thước cấp phát mong muốn với malloc() (+ 0x10 bytes phần metadata). Đồng thời chứa flag ở 3 bit cuối:
+  * `PREV_INUSE (0x1)`	chunk trước đang được dùng (chưa được free() nên prev_size = 0 - chưa giải phóng byte nào)
+  * `IS_MMAPPED (0x2)`	dùng mmap
+  * `NON_MAIN_ARENA (0x4)`	thuộc arena khác 
 * `chunk`: ptr trỏ đến vị trí này, và đây là nơi chứa data từ chương trình, có kích thước đúng = kích thước yêu cầu cấp phát ban đầu của malloc() 
 
 ### Bieu dien tren memory + gdbpwndbg:
