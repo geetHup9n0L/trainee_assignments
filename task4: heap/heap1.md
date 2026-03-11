@@ -204,7 +204,9 @@ ___
     Size: 0x70 (with flag bits: 0x71)
     fd: 0x15473
     ```
+    
     <img width="805" height="222" alt="image" src="https://github.com/user-attachments/assets/50ba5a8b-0dfd-4447-b450-3cce0b42d941" />
+	
 	```asm
 	0x15473280      0x0000000000000000      0x0000000000000000      ................
 	0x15473290      0x0000000000000000      0x0000000000000021      ........!.......
