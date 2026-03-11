@@ -21,7 +21,7 @@ Output chương trình:
 
 <img width="810" height="145" alt="image" src="https://github.com/user-attachments/assets/82bbb14c-712d-4920-b5aa-cd8f89d94834" />
 
-Code từ ghidra:
+Code từ ghidra (với các biến được đặt tên lại):
 * `main()`:
 ```c
 void main(void)
@@ -57,50 +57,51 @@ LAB_00400d2a:
   } while( true );
 }
 ```
-* `create()`:
+`create()`:
 ```c
 undefined8 create(void)
 {
   uint size;
-  undefined8 *ptr1;
-  void *ptr2;
+  data *data;
+  char *content;
   int i;
   
-  i = 0;
-  while ((i < 9 && (*(long *)(&data + (long)i * 8) != 0))) {
-    i = i + 1;
+  for (i = 0; (i < 9 && ((&database)[i] != (data *)0x0)); i = i + 1) {
   }
   printf("Input size:");
   size = read_input();
   if (size < 4097) {
-    ptr1 = (undefined8 *)malloc(0x10);
-    ptr2 = malloc((ulong)size);
-    *ptr1 = ptr2;
-    *(undefined8 **)(&data + (long)i * 8) = ptr1;
+    data = (data *)malloc(0x10);
+    content = (char *)malloc((ulong)size);
+    data->content = content;
+    (&database)[i] = data;
     printf("Input data:");
-    read(*ptr1,size);
+    read(data->content,size);
     return 0;
   }
                     /* WARNING: Subroutine does not return */
   exit(0);
 }
 ```
-* `delete()`:
+* có `database` (là `DAT_006020e0` lúc trước) là vùng nhớ trên heap, chứa các pointer `data` từ 0 đến 8
+* có `data` là vùng nhớ được cấp phát động để chứa pointer trỏ đến chunk của `content` cũng được cấp phát động theo `size` do người dùng đặt
+* có `size` tối đa = `4096`, có thể tận dụng cho **heap overflow**
+`delete()`:
 ```c
 undefined8 delete(void)
 {
   int index;
-  void *ptr;
+  undefined *ptr;
   
   printf("Input index:");
   index = read_input();
   if ((index < 10) && (-1 < index)) {
-    if (*(long *)(&data + (long)index * 8) != 0) {
-      ptr = (void *)**(undefined8 **)(&data + (long)index * 8);
-      free(*(void **)(&data + (long)index * 8));
+    if ((&database)[index] != (data *)0x0) {
+      ptr = (&database)[index]->content;
+      free((&database)[index]);
       free(ptr);
-      **(undefined8 **)(&data + (long)index * 8) = 0;
-      *(undefined8 *)(&data + (long)index * 8) = 0;
+      (&database)[index]->content = (undefined *)0x0;
+      (&database)[index] = (data *)0x0;
       puts("Done ");
     }
     return 0;
@@ -109,31 +110,22 @@ undefined8 delete(void)
   exit(0);
 }
 ```
-* `flag_check()`:
+`flag_check()`:
 ```c
-undefined8 delete(void)
+undefined8 flag_check(void)
+
 {
-  int index;
-  void *ptr;
-  
-  printf("Input index:");
-  index = read_input();
-  if ((index < 10) && (-1 < index)) {
-    if (*(long *)(&data + (long)index * 8) != 0) {
-      ptr = (void *)**(undefined8 **)(&data + (long)index * 8);
-      free(*(void **)(&data + (long)index * 8));
-      free(ptr);
-      **(undefined8 **)(&data + (long)index * 8) = 0;
-      *(undefined8 *)(&data + (long)index * 8) = 0;
-      puts("Done ");
-    }
-    return 0;
+  if ((DAT_006020f0 != 0) && (*(long *)(DAT_006020f0 + 8) == 0xabcdef)) {
+    get_flag();
   }
-                    /* WARNING: Subroutine does not return */
-  exit(0);
+  return 0;
 }
 ```
+
+<img width="695" height="447" alt="image" src="https://github.com/user-attachments/assets/4b9b37f5-5382-40d6-9b99-f3e132183f2c" />
+
 ___
+
 
 
 
