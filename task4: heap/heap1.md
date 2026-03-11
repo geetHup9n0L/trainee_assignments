@@ -12,6 +12,15 @@ Partial RELRO   Canary found      NX enabled    No PIE          No RPATH   No RU
 * `Partial RELRO`: overwrite GOT
 * `No PIE`: địa chỉ binary tĩnh
 
+Chương trinh đang thiếu loader, nên ta dùng patchelf:
+```bash
+└─$ patchelf --set-interpreter /lib64/ld-linux-x86-64.so.2 pwn1_ff_copy
+```
+
+Output chương trình:
+
+<img width="810" height="145" alt="image" src="https://github.com/user-attachments/assets/82bbb14c-712d-4920-b5aa-cd8f89d94834" />
+
 Code từ ghidra:
 * `main()`:
 ```c
@@ -46,35 +55,6 @@ LAB_00400d2a:
     if (choice != 4) goto LAB_00400d2a;
     flag_check();
   } while( true );
-}
-```
-* `menu()`:
-```c
-undefined8 menu(void)
-{
-  puts("1: create heap");
-  puts("2: delete heap");
-  puts("3: exit");
-  puts(">");
-  return 0;
-}
-```
-* `read_input()`:
-```c
-void read_input(void)
-{
-  long in_FS_OFFSET;
-  char buffer [24];
-  long canary;
-  
-  canary = *(long *)(in_FS_OFFSET + 0x28);
-  read(buffer,16);
-  atoi(buffer);
-  if (canary != *(long *)(in_FS_OFFSET + 0x28)) {
-                    /* WARNING: Subroutine does not return */
-    __stack_chk_fail();
-  }
-  return;
 }
 ```
 * `create()`:
