@@ -205,12 +205,29 @@ ___
     fd: 0x15473
     ```
     <img width="805" height="222" alt="image" src="https://github.com/user-attachments/assets/50ba5a8b-0dfd-4447-b450-3cce0b42d941" />
+	```asm
+	0x15473280      0x0000000000000000      0x0000000000000000      ................
+	0x15473290      0x0000000000000000      0x0000000000000021      ........!.......
+	0x154732a0      0x0000000000015473      0x62b23672cba2f66b      sT......k...r6.b         <-- tcachebins[0x20][0/1]
+	0x154732b0      0x0000000000000000      0x0000000000000071      ........q.......
+	0x154732c0      0x0000000000015473      0x62b23672cba2f66b      sT......k...r6.b         <-- tcachebins[0x70][0/1]
+	0x154732d0      0x0000000000000000      0x0000000000000000      ................
+	0x154732e0      0x0000000000000000      0x0000000000000000      ................
+	0x154732f0      0x0000000000000000      0x0000000000000000      ................
+	0x15473300      0x0000000000000000      0x0000000000000000      ................
+	0x15473310      0x0000000000000000      0x0000000000000000      ................
+	0x15473320      0x0000000000000000      0x0000000000020ce1      ................         <-- Top chunk
+  	```
 
 * Tái sử dụng các freed chunk trên với `create()`: 
 
 TLDR:
 
 ta có `data->content = content` nghĩa là lưu pointer của chunk content, rồi mới read vào con trỏ trong data->content. Vì vậy ta có thể overwrite địa chỉ con trỏ trong data->content với địa chỉ `DAT_006020f0`, rồi sau đó khi thực hiện `read()`, sẽ đọc vào đấy. Và ta sẽ đặt điều kiện theo flag.
+
+phương pháp 1: tạo chunk đầu tiên, tạo chunk thứ 2, delete chunk đầu tiền, tạo chunk thứ 3 tái sử dụng freedchunk vừa rồi, thử overwrite chunk thứ 2 với địa chỉ `DAT_006020f0` (hơi bất thi khi mà size() giống trước, mà chunk thứ 2 được đặt sau nên ko với tới được)
+
+phương pháp 2: tạo chunk đầu tiên (chunk content size = 100), free, tạo chunk 2 tải sử dụng phần freed chunk data, (chunk content size = 200 - tạo chunk mới từ top chunk), tạo chunk 3: phần chunk data tái sử dụng freed chunk (110 của freed chunk content) và (chunk size content = 300 - để tránh tái sử dụng cái chunk 110 kia). Nhiệm vụ là write data của chunk đầu với `DAT_006020f0` (hơi bất khả thi vì reuse chunk, chương trình sẽ overwrite lại chỗ đấy với pointer của chunk content (300).
 
 ___
 `script.py`:
