@@ -1,6 +1,11 @@
 ### Thông tin file:
 
 ```c
+└─$ ls heap1
+
+```
+
+```c
 └─$ file pwn1_ff 
 pwn1_ff: ELF 64-bit LSB executable, x86-64, version 1 (SYSV), dynamically linked, interpreter ./ld-2.23.so, for GNU/Linux 2.6.32, BuildID[sha1]=b744398ed054457775b2ede2fc6f427f294fca56, stripped
 ```
@@ -14,7 +19,8 @@ Partial RELRO   Canary found      NX enabled    No PIE          No RPATH   No RU
 
 Chương trinh đang thiếu loader, nên ta dùng patchelf:
 ```bash
-└─$ patchelf --set-interpreter /lib64/ld-linux-x86-64.so.2 pwn1_ff_copy
+patchelf --set-interpreter ./ld-2.23.so pwn1_ff_patched
+patchelf --set-rpath . pwn1_ff_patched
 ```
 
 Output chương trình:
@@ -186,7 +192,7 @@ ___
     <img width="820" height="237" alt="image" src="https://github.com/user-attachments/assets/b0819ea8-6760-4348-8844-721001829b90" />
 
 * Giải phóng các chunk với `delete()`
-  * cả chunk `content` và `data` được đưa vào bin tcache
+  * cả chunk `content` và `data` được đưa vào bin fastbin
     ```asm
     pwndbg> bins
     tcachebins
@@ -279,8 +285,31 @@ p.sendlineafter(b"index:", b"0")
 
 p.interactive()
 ```
+___
+Lấy đúng bản loader tương ứng libc được cấp 
+```c
+wget http://security.ubuntu.com/ubuntu/pool/main/g/glibc/libc6_2.23-0ubuntu11.3_amd64.deb
+```
+```c
+# Extract the package
+ar x libc6_2.23-0ubuntu11.3_amd64.deb
 
+# Extract the data folder inside it
+tar -xf data.tar.xz
 
+# Find the loader and copy it to your current folder
+cp lib/x86_64-linux-gnu/ld-2.23.so .
+```
+```c
+# 1. Tell the binary: "Use this specific loader"
+patchelf --set-interpreter ./ld-2.23.so pwn1_ff_patched
+
+# 2. Tell the binary: "Look for libraries in the current folder"
+patchelf --set-rpath . pwn1_ff_patched
+
+# 3. Ensure the library name matches what the binary expects
+cp libc.2.23.so libc.so.6
+```
 ___
 doc:
 
