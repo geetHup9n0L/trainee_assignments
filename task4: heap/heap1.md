@@ -132,7 +132,9 @@ undefined8 flag_check(void)
   return 0;
 }
 ```
-* có `DAT_006020f0` là vùng nhớ trên heap cận kề vùng `database` (`DAT_006020e0`):
+* có `DAT_006020f0` là vùng nhớ trên heap cận kề vùng `database` (`DAT_006020e0`), với:
+	* `DAT_006020f0` là `database[2]` (DAT_006020e0 + 16)
+ 	* `DAT_006020f0 + 8` là `database[3]` (DAT_006020e0 + 24)
 
 <img width="695" height="447" alt="image" src="https://github.com/user-attachments/assets/4b9b37f5-5382-40d6-9b99-f3e132183f2c" />
 
@@ -141,7 +143,7 @@ undefined8 flag_check(void)
   DAT_006020f0 != 0
   DAT_006020f0 + 8 == 0xabcdef
   ```
-* tuy nhiên `database` là list chỉ nhận 8 địa chỉ con trỏ, nên ta không thể overwrite đến được địa chỉ `DAT_006020f0` 
+
 ___
 ### Ý tưởng exploit:
 * Tạo vùng nhớ data với `create()` và lưu pointer vào từ index 0 của `database`
