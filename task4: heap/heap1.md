@@ -169,7 +169,7 @@ ___
 * bởi vì `create()` tạo chunk và lưu theo thứ tự index 0 -> 8, mà chunk `get_flag()` check ở index 2
 * tạo đệm trước hai chunk lớn đầu: 0, 1
 
-  [heap1](https://github.com/geetHup9n0L/trainee_assignments/blob/main/task4%3A%20heap/images/heap1/heap1.png)
+  [heap1](images/heap1/heap1.png)
 
   heap2
 
