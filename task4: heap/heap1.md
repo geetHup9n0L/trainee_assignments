@@ -171,9 +171,9 @@ ___
 
   ![heap1](images/heap1/heap1.png)
 
-  heap2
+  ![heap2](images/heap1/heap2.png)
 
-  heap3
+  ![heap3](images/heap1/heap3.png)
 
 * có chunk `data` mặc định 32 byte (0x20):
   * 0x10 bytes đầu là metadata
@@ -223,11 +223,11 @@ ___
 	0x182c0d0       0x0000000000000000      0x0000000000020f31      ........1.......         <-- Top chunk
     ```
     
-	heap4
+	![heap4](images/heap1/heap4.png)
 
   * khi `delete()` chunk lớn thứ 3, cả 2 chunk con đều được đưa vào fastbin, chung một list (=0x20)
 
-	heap5
+	![heap5](images/heap1/heap5.png)
 
 	```
 	0x182c090       0x0000000000000000      0x0000000000000021      ........!.......         <-- fastbins[0x20][1]
@@ -238,7 +238,7 @@ ___
   	```
   	* để ý, sau khi free, giá trị `0x0000000000abcdef` ở chunk content vẫn giữ nguyên
 
-	heap6
+	![heap6](images/heap1/heap6.png)
 	
 	```
 	pwndbg> fastbins
@@ -259,15 +259,15 @@ ___
     ```
     * `malloc()` của `data` đầu tiên sẽ lấy `0x182c0b0` từ fastbin (hay là chunk `content` trước đó)
    
-    heap7
+    ![heap7](images/heap1/heap7.png)
  
-    heap8
+    ![heap8](images/heap1/heap8.png)
  
     * `malloc()` của `content` với size đặt=0x20 sau đấy sẽ lấy `0x182c090` còn lại từ fastbin (là chunk `data` trước đó)
     
-	heap9
+	![heap9](images/heap1/heap9.png)
 
-	heap10
+	![heap10](images/heap1/heap10.png)
 
   * Khi chọn option 4 để `get_flag` kiểm tra điều kiện tại `database[2]`, khi đấy là:
     ```
@@ -285,7 +285,7 @@ ___
 	```
    	* tại `[0x182c0c0]` lại chứa con trỏ đến chunk `content` nên thỏa mãn khác 0
 
-	heap11
+	![heap11](images/heap1/heap11.png)
 ___
 `script.py`:
 ```python
