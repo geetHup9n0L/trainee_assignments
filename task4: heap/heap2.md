@@ -21,7 +21,7 @@ Code của chương trình:
 ```c
 void main(void)
 {
-  undefined4 option;
+  int option;
   
   initState();
   puts("Ez heap challange !");
@@ -138,6 +138,54 @@ ___
 ___
 `script.py`:
 ```python
+from pwn import *
 
+libc = ELF("./libc.2.23.so", checksec=False)
+
+context.binary = exe = ELF("./pwn2_df_patched", checksec=False)
+context.log_level = "debug"
+
+def GDB():
+	gdb.attach(p, gdbscript='''
+		handle SIGALRM ignore
+		# main
+		br *0x400ca9
+		# create
+		br *0x400aa2
+		br *0x400b06
+		# delete
+		br *0x400b67
+		br *0x400bde
+
+		# heap check:
+		# heap [-v]
+		# vis
+		# vmmap
+		# x/4gx 0x006020e0
+		''')
+
+p = process(exe.path)
+# GDB()
+
+def createHeap(idx, size, data):
+	p.sendlineafter(b">", b"1")
+	p.sendlineafter(b"index:", idx)
+	p.sendlineafter(b"size:", size)
+	p.sendlineafter(b"data:", data)
+
+def showHeap(idx):
+	p.sendlineafter(b">", b"2")
+	p.sendlineafter(b"index:", idx)
+
+def editHeap(idx, data):
+	p.sendlineafter(b">", b"3")
+	p.sendlineafter(b"index:", idx)
+	p.sendline(data)
+
+def deleteHeap(idx):
+	p.sendlineafter(b">", b"4")
+	p.sendlineafter(b"index:", idx)
+
+p.interactive()
 ```
 ___
