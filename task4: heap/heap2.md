@@ -206,7 +206,7 @@ Ta phải exploit để chương trình spawn shell
 	Size: 0x20bc0 (with flag bits: 0x20bc1)
     ```
   * `deleteHeap(0)`: free chunk lớn đầu tiên vào unsortedbin (vì size chunk khi free = 0x420)
-    ```
+    ```asm
 	pwndbg> bins
 	fastbins
 	empty
@@ -217,7 +217,7 @@ Ta phải exploit để chương trình spawn shell
 	largebins
 	empty
     ```
-    ```
+    ```asm
 	pwndbg> vis
 	
 	0x556f4fd00000  0x0000000000000000      0x0000000000000421      ........!.......         <-- unsortedbin[all][0]
@@ -253,7 +253,7 @@ Ta phải exploit để chương trình spawn shell
 
   	  đoạn này là do malloc() thấy chunk 0x60 < chunk 0x420 trong unsortedbin nên split từ unsortedbin  
 	* `deleteHeap(2)`: free chunk trên, đưa chunk vào fastbin
-      ```
+      ```asm
 		pwndbg> fastbins
 		fastbins
 		0x70: 0x556f4fd00000 ◂— 0
@@ -311,7 +311,7 @@ Ta phải exploit để chương trình spawn shell
 	 ![image](images/heap2/heap6.png)
 
   	offset `- 0x23` để căn giá trị `0x7f` đúng chỗ chunksize của phần metadata
-  	```
+  	```asm
 	0x5e2219a260000000     0x000000000000007f  <= metadata (prev_size + size)
    	0x5e21e79b00000000     0x5e21e79aa000007f  <= data
 	```
