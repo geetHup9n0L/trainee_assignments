@@ -17,6 +17,7 @@ Full RELRO      Canary found      NX enabled    PIE enabled     No RPATH   No RU
 
 ___
 Code của chương trình:
+
 `main()`:
 ```c
 void main(void)
@@ -87,6 +88,7 @@ undefined8 createHeap(void)
 * `&store` và `&storeSize` là vùng nhớ trên .bss của binary, với:
 	* `&store`: lưu lại con trỏ trả lại của các chunk cấp phát
  	* `&storeSize`: lưu	lại size của các chunk (mỗi size chiếm 4 bytes)
+  
 `showHeap()`:
 ```c
 undefined8 showHeap(void)
@@ -105,6 +107,7 @@ undefined8 showHeap(void)
 }
 ```
 * `printf("Data = %s\n",(&store)[idx])`: in dữ liệu trong chunk => có thể dùng để leak libc
+
 `editHeap()`:
 ```c
 undefined8 editHeap(void)
