@@ -187,3 +187,8 @@ p.interactive()
 ````
 <img width="659" height="290" alt="image" src="https://github.com/user-attachments/assets/0606f4f0-7dcd-4e6e-aba4-4e0cab52f700" />
 
+
+___
+docs:
+
+
