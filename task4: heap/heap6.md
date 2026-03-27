@@ -1,7 +1,5 @@
 ```c
-
 void main(void)
-
 {
   undefined4 option;
   
@@ -32,10 +30,9 @@ void main(void)
     }
   } while( true );
 }
-
-
+```
+```c
 undefined8 createHeap(void)
-
 {
   int idx;
   void *ptr;
@@ -54,10 +51,9 @@ undefined8 createHeap(void)
                     /* WARNING: Subroutine does not return */
   exit(0);
 }
-
-
+```
+```c
 ulong readStr(void *buffer,uint size)
-
 {
   int len;
   ulong bytes;
@@ -73,10 +69,9 @@ ulong readStr(void *buffer,uint size)
   }
   return bytes & 0xffffffff;
 }
-
-
+```
+```c
 undefined8 showHeap(void)
-
 {
   int idx;
   
@@ -87,10 +82,9 @@ undefined8 showHeap(void)
   }
   return 0;
 }
-
-
+```
+```c
 undefined8 editHeap(void)
-
 {
   int idx;
   
@@ -106,10 +100,9 @@ undefined8 editHeap(void)
                     /* WARNING: Subroutine does not return */
   exit(0);
 }
-
-
+```
+```c
 undefined8 deleteHeap(void)
-
 {
   int idx;
   
@@ -125,11 +118,20 @@ undefined8 deleteHeap(void)
                     /* WARNING: Subroutine does not return */
   exit(0);
 }
-
-
 ```
 ___
 ![image](images/heap6/img1.png)
+
+![image](images/heap6/img2.1.png)
+
+![image](images/heap6/img2.2.png)
+
+![image](images/heap6/img3.png)
+
+![image](images/heap6/img4.png)
+
+![image](images/heap6/img5.png)
+
 ___
 main bug: tcache poisoning
 
