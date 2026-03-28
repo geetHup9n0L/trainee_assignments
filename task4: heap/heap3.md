@@ -438,6 +438,7 @@ ___
 ### Exploit:
 
 <img width="644" height="413" alt="image" src="https://github.com/user-attachments/assets/023ca25c-097e-4568-b7b8-b1d979d47896" />
+
 ````c
 1 000 000 000 =
 0x3B9ACA00
@@ -546,7 +547,7 @@ Size: 0x20e80 (with flag bits: 0x20e81)
 
 after deleting:
 
-````àsm
+````asm
 pwndbg> vis
 0x278ab000      0x0000000000000000      0x0000000000000031      ........1.......        <-- fastbins[0x30][0]                                                 
 0x278ab010      0x00000000278ab150      0x00000000278ab070      P..'....p..'....                                                                              
@@ -573,8 +574,8 @@ pwndbg> vis
 0x278ab160      0x00000000278ab120      0x00000000278ab0a0       ..'.......'....                                                                              
 0x278ab170      0x0000000000000000      0x0000000000000000      ................                                                                              
 0x278ab180      0x00000000000000c8      0x0000000000020e81      ................        <-- Top chunk
-
-                                                       
+````
+````asm                                                  
 pwndbg> heap
 Free chunk (fastbins) | PREV_INUSE
 Addr: 0x278ab000
