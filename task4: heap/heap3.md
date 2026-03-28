@@ -470,6 +470,8 @@ def GDB():
 		br *0x4014d0
 
 		br *0x401717
+
+		# x/8gx *0x603100
 		''')
 
 p = process(exe.path)
