@@ -304,11 +304,11 @@ done:
         else {
           tx_node1 = (tx_node *)malloc(0x28);
           tx_node1->*next = (tx_node *)0x0;
-          tx_node1->user = (char **)active_user;
+          tx_node1->user = (char **)active_user;  // name of the user who sent the cash
           tx_node1->value = (long)is_match;
           tx_node1->id = transaction_id;
           tx_node1->*is_received = (tx_node *)0x1;
-          receiver_user->balance = receiver_user->balance + (long)is_match;
+          receiver_user->balance = receiver_user->balance + (long)is_match; // add the sent cash to receiver
           if (receiver_user->transaction == (tx_node *)0x0) {
             receiver_user->transaction = tx_node1;
           }
@@ -320,11 +320,11 @@ done:
           }
           tx_node2 = (tx_node *)malloc(0x28);
           tx_node2->*next = (tx_node *)0x0;
-          tx_node2->user = (char **)receiver_user;
+          tx_node2->user = (char **)receiver_user;  // name of the user who receive the cash
           tx_node2->value = (long)is_match;
           tx_node2->id = transaction_id;
           tx_node2->*is_received = (tx_node *)0x0;
-          active_user->balance = active_user->balance - (long)is_match;
+          active_user->balance = active_user->balance - (long)is_match;  // subtract the sent cash
           transaction_id = transaction_id + 1;
           if (active_user->transaction == (tx_node *)0x0) {
             active_user->transaction = tx_node2;
