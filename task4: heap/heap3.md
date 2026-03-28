@@ -188,22 +188,22 @@ OVER:
                     /* WARNING: Subroutine does not return */
         exit(0);
       }
-      created_user = (char **)malloc(0x20);
-      (&users)[registered_idx] = created_user;
+      created_user = (char **)malloc(0x20);      //
+      (&users)[registered_idx] = created_user;   // chunk for input username at idx [0]
       created_user = (&users)[registered_idx];
-      pass = (char *)malloc(0x20);
-      *created_user = pass;
-      created_user = (&users)[registered_idx];
-      pass = (char *)malloc(0x20);
-      created_user[1] = pass;
+      //pass = (char *)malloc(0x20);
+      //*created_user = pass;
+      //created_user = (&users)[registered_idx];    // bs
+      pass = (char *)malloc(0x20);        //
+      created_user[1] = pass;            // chunk for input passwrd at idx [1]
       (&users)[registered_idx][2] = (char *)1000000000;
       (&users)[registered_idx][3] = (char *)0x0;
-      strncpy(*(&users)[registered_idx],input,31);
+      strncpy(*(&users)[registered_idx],input,31);  // read name
       printf("Please input password\n> ");
-      read((&users)[registered_idx][1],31);
+      read((&users)[registered_idx][1],31);        // read pass
       printf("Verify input password\n> ");
       read(input,31);
-      used = strcmp((&users)[registered_idx][1],input);
+      used = strcmp((&users)[registered_idx][1],input);  // verify pass
       if (used == 0) {
         puts("[+] Registration success");
         valid = 0;
@@ -213,7 +213,7 @@ OVER:
         free(*(&users)[registered_idx]);
         free((&users)[registered_idx][1]);
         free((&users)[registered_idx]);
-        (&users)[registered_idx] = (char **)0x0;
+        (&users)[registered_idx] = (char **)0x0;      // free
         valid = 0;
       }
 exit:
@@ -231,6 +231,20 @@ exit:
   } while( true );
 }
 ```
+* max available accounts: `5` (0 -> 4)
+  
+* struct of  `(&users)[registered_idx]`:
+````c
+typedef struct {
+  *name[0x20], 
+  *pass[0x20],
+  balance = 1000000000,
+  is_true = 0
+} users;
+````
+````
+=================== =================== IF: Registration success =================== ===================
+````
 `display_info()`:
 ```c
 undefined8 display_info(user *current_user)
