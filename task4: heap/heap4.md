@@ -6,12 +6,13 @@ libc.2.23.so  pwn4_ul
 ```
 
 ```c
+└─$ file pwn4_ul_patched 
 pwn4_ul_patched: ELF 64-bit LSB executable, x86-64, version 1 (SYSV), dynamically linked, interpreter ./ld-2.23.so, for GNU/Linux 2.6.32, BuildID[sha1]=5b72263ca214a77e25ca46bec6ac2ac2c91ce268, not stripped
                                                                                                    
 └─$ checksec --file=pwn4_ul_patched 
 RELRO           STACK CANARY      NX            PIE             RPATH      RUNPATH      Symbols   FORTIFY  Fortified       Fortifiable     FILE
 Partial RELRO   Canary found      NX enabled    No PIE          No RPATH   RW-RUNPATH   90 Symbols  No     0               2               pwn4_ul_patched
-                                                         
+                                                
 ```
 
 ___ 
