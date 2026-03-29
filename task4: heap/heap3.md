@@ -347,6 +347,17 @@ done:
   } while( true );
 }
 ```
+struct of a transaction node:
+````c
+typedef struct {
+	tx_node *next;
+	users 	*user;
+	int		id;
+	int 	is_received;
+	int 	value;
+} tx_node
+````
+
 `display_transaction()`:
 ```c
 undefined8 display_transaction(user *active_user)
