@@ -3,8 +3,189 @@ ___
 
 https://devel0pment.de/?p=688
 ___
+### Thông tin:
 
+```c
+└─$ ls
+libc.2.23.so  pwn5_null
+```
+```c
+pwn5_null: ELF 64-bit LSB pie executable, x86-64, version 1 (SYSV), dynamically linked, interpreter ./ld-2.23.so, for GNU/Linux 3.2.0, BuildID[sha1]=9f1740b42bc97cb470a75e9386d7fb64867795d3, not stripped
+                                                                                                   
+└─$ checksec --file=pwn5_null       
+RELRO           STACK CANARY      NX            PIE             RPATH      RUNPATH      Symbols   FORTIFY  Fortified       Fortifiable     FILE
+Full RELRO      Canary found      NX enabled    PIE enabled     No RPATH   No RUNPATH   88 Symbols  No     0               2               pwn5_null
+```
 
+___
+Code:
+
+`main()`:
+```c
+void main(void)
+{
+  undefined4 option;
+  
+  initState();
+  puts("Ez heap challange !");
+  do {
+    menu();
+    option = readInt();
+    switch(option) {
+    default:
+      puts("no option");
+      break;
+    case 1:
+      createHeap();
+      break;
+    case 2:
+      showHeap();
+      break;
+    case 3:
+      editHeap();
+      break;
+    case 4:
+      deleteHeap();
+      break;
+    case 5:
+                    /* WARNING: Subroutine does not return */
+      exit(0);
+    }
+  } while( true );
+}
+```
+`createHeap()`:
+```c
+undefined8 createHeap(void)
+{
+  int idx;
+  uint size;
+  void *ptr;
+  
+  printf("Index:");
+  idx = readInt();
+  if ((-1 < idx) && (idx < 10)) {
+    if (*(long *)(store + (long)idx * 8) == 0) {
+      printf("Input size:");
+      size = readInt();
+      if (0x1000 < size) {
+                    /* WARNING: Subroutine does not return */
+        exit(0);
+      }
+      ptr = calloc((ulong)size,1);
+      *(void **)(store + (long)idx * 8) = ptr;
+      *(uint *)(storeSize + (long)idx * 4) = size;
+      printf("Input data:");
+      readSTr(*(undefined8 *)(store + (long)idx * 8),size);
+      puts("Done");
+    }
+    return 0;
+  }
+                    /* WARNING: Subroutine does not return */
+  exit(0);
+}
+```
+`showHeap()`:
+```c
+undefined8 showHeap(void)
+{
+  int idx;
+  
+  printf("Index:");
+  idx = readInt();
+  if ((-1 < idx) && (idx < 10)) {
+    if (*(long *)(store + (long)idx * 8) != 0) {
+      printf("Data = %s\n",*(undefined8 *)(store + (long)idx * 8));
+    }
+    return 0;
+  }
+                    /* WARNING: Subroutine does not return */
+  exit(0);
+}
+```
+`editHeap()`:
+```c
+undefined8 editHeap(void)
+{
+  int idx;
+  uint newsize;
+  int yes;
+  void *ptr;
+  long in_FS_OFFSET;
+  char input [10];
+  long canary;
+  
+  canary = *(long *)(in_FS_OFFSET + 0x28);
+  printf("Input index:");
+  idx = readInt();
+  if ((9 < idx) || (idx < 0)) {
+                    /* WARNING: Subroutine does not return */
+    exit(0);
+  }
+  if (*(long *)(store + (long)idx * 8) != 0) {
+    printf("Input newsize:");
+    newsize = readInt();
+    if (*(uint *)(storeSize + (long)idx * 4) < newsize) {
+      free(*(void **)(store + (long)idx * 8));
+      ptr = malloc((ulong)newsize);
+      *(void **)(store + (long)idx * 8) = ptr;
+      *(uint *)(storeSize + (long)idx * 4) = newsize;
+    }
+    puts("Do you want to change data (y/n)?");
+    readStr(input,10);
+    yes = strcmp(input,"y");
+    if (yes == 0) {
+      printf("Input data:");
+      readSTr(*(undefined8 *)(store + (long)idx * 8),*(undefined4 *)(storeSize + (long)idx * 4));
+    }
+    puts("Done ");
+  }
+  if (canary == *(long *)(in_FS_OFFSET + 0x28)) {
+    return 0;
+  }
+                    /* WARNING: Subroutine does not return */
+  __stack_chk_fail();
+}
+```
+`readStr()`:
+```c
+ulong readSTr(void *buffer,uint size)
+{
+  ulong len;
+  
+  len = read(0,buffer,(ulong)size);
+  if ((int)len < 0) {
+                    /* WARNING: Subroutine does not return */
+    exit(0);
+  }
+  *(undefined1 *)((long)buffer + (long)(int)len) = 0;
+  return len & 0xffffffff;
+}
+```
+`deleteHeap()`:
+```c
+undefined8 deleteHeap(void)
+{
+  int idx;
+  
+  printf("Input index:");
+  idx = readInt();
+  if ((idx < 10) && (-1 < idx)) {
+    if (*(long *)(store + (long)idx * 8) != 0) {
+      free(*(void **)(store + (long)idx * 8));
+      *(undefined8 *)(store + (long)idx * 8) = 0;
+      puts("Done ");
+    }
+    return 0;
+  }
+                    /* WARNING: Subroutine does not return */
+  exit(0);
+}
+```
+___
+## Khai thác:
+
+___
 <img width="659" height="290" alt="image" src="https://github.com/user-attachments/assets/0606f4f0-7dcd-4e6e-aba4-4e0cab52f700" />
 
 final script.py:
