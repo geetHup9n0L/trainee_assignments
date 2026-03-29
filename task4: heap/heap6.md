@@ -187,8 +187,6 @@ Và ta có thể tận dụng bug này để leak địa chỉ libc:
 
 Có được địa chỉ leak, tính ra libc.address và system 
 
-![image](images/heap6/img1.png)
-
 Ta tiếp tục tận dùng bug UAF để khai thác lỗ hổng tiếp theo: 
 
 Với hàm `editHeap()` cho phép overwrite vào fd của freed chunk
