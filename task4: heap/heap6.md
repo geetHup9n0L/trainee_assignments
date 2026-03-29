@@ -1,3 +1,25 @@
+### Thông tin:
+
+```c
+└─$ ls 
+libc.2.28.so       pwn6_hoo
+```
+```c
+└─$ file pwn6_hoo              
+pwn6_hoo: ELF 64-bit LSB pie executable, x86-64, version 1 (SYSV), dynamically linked, interpreter ./ld-2.28.so, for GNU/Linux 3.2.0, BuildID[sha1]=2bab9b4759f0784ceabd4f99b1fe29307160a32b, not stripped
+```
+```c                                                                                                   
+└─$ checksec --file=pwn6_hoo   
+RELRO           STACK CANARY      NX            PIE             RPATH      RUNPATH      Symbols   FORTIFY  Fortified       Fortifiable     FILE
+Full RELRO      Canary found      NX enabled    PIE enabled     No RPATH   No RUNPATH   85 Symbols  No     0               2               pwn6_hoo
+```
+
+Challenge này chạy trên bản libc 2.28, là có sự xuất hiện của `tcachebins`
+___
+Code:
+
+`main()`:
+
 ```c
 void main(void)
 {
@@ -31,6 +53,7 @@ void main(void)
   } while( true );
 }
 ```
+`createHeap()`:
 ```c
 undefined8 createHeap(void)
 {
@@ -52,6 +75,11 @@ undefined8 createHeap(void)
   exit(0);
 }
 ```
+* có thể tạo tối đa 10 heap chunks 
+* mặc định mỗi size data là 0x80, vậy chunk là 0x90
+	--> khi free(), chunk đủ đưa vào tcachebin 
+
+`readStr()`:
 ```c
 ulong readStr(void *buffer,uint size)
 {
@@ -70,6 +98,7 @@ ulong readStr(void *buffer,uint size)
   return bytes & 0xffffffff;
 }
 ```
+`showHeap()`:
 ```c
 undefined8 showHeap(void)
 {
@@ -83,6 +112,9 @@ undefined8 showHeap(void)
   return 0;
 }
 ```
+* dùng để leak data bất kỳ trên chunk
+
+`editHeap()`:
 ```c
 undefined8 editHeap(void)
 {
@@ -101,6 +133,9 @@ undefined8 editHeap(void)
   exit(0);
 }
 ```
+* cho phép overwrite vào phần data chunk với size định sẵn
+
+`deleteHeap()`:
 ```c
 undefined8 deleteHeap(void)
 {
@@ -119,8 +154,42 @@ undefined8 deleteHeap(void)
   exit(0);
 }
 ```
+* trong hàm này, chỉ free() chunk 0x90 mà không set địa chỉ trong `store` về null
+  ```c
+  free(*(void **)(store + (long)idx * 8));
+  puts("Done ");
+  ```
+* có thể tận dụng bug **Use-After-Free** với các hàm trên: **editHeap(), showHeap()**
 ___
+### Khai thác:
+Vì chương trình chạy trên bản libc 2.28 có mặt tcachebins: `libc.2.28.so`
+
+Và `createHeap()` tạo mặc định chunk với kích thước `0x90` (0x10 + 0x80):
+```c
+    ptr = malloc(0x80);
+    *(void **)(store + (long)idx * 8) = ptr;
+    *(undefined4 *)(storeSize + (long)idx * 4) = 0x80;
+```
+
+Có nghĩa là khi free(), chỉ có thể khai thác trong tcachebins tại size 0x90
+
+Vì tương ứng với tcachebin của một kích thước nhất định (ví dụ: 0x90), chỉ có thể giữ tối đa 7 chunks
+
+Những chunk cùng size (0x90) sau đấy nếu được free() sẽ được đưa vào unsortedbin
+
+Và ta có thể tận dụng bug này để leak địa chỉ libc:
+
+* trước hết, `createHeap()` tạo 8 chunks trên heap, để khi free() thì 7 chunks đầu lấp đấy tcachebin size `0x90` và chunk cuối là chunk tràn sang unsortedbin
+* `createHeap()` một chunk nữa (chunk thứ 9) để tránh chunk thứ 8 khi free() vào unsortedbin sẽ gộp với topchunk
+* dùng `deleteHeap()` để free() 8 chunks tạo ra, lần lượt đưa 7 chunks đầu vào đầy tcachebins, chunk thứ 8 sẽ được đưa vào unsortedbin
+* kiểm tra Heap, thấy chunk trong unsortedbin có con trỏ fd và bk trỏ đến `(main_arena)` là một địa chỉ libc
+* vì có bug UAF, ta có thể truy cập vào dữ liệu bên trong freed chunk, ta leak địa chỉ `(main_arena)` với `showHeap()`  
+
+Có được địa chỉ leak, tính ra libc.address và one_gadget
+
 ![image](images/heap6/img1.png)
+
+Ta tiếp tục tận dùng bug UAF để khai thác  
 
 ![image](images/heap6/img2.1.png)
 
@@ -131,9 +200,6 @@ ___
 ![image](images/heap6/img4.png)
 
 ![image](images/heap6/img5.png)
-
-___
-main bug: tcache poisoning
 
 
 ___
