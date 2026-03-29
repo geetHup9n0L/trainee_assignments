@@ -185,11 +185,35 @@ Và ta có thể tận dụng bug này để leak địa chỉ libc:
 * kiểm tra Heap, thấy chunk trong unsortedbin có con trỏ fd và bk trỏ đến `(main_arena)` là một địa chỉ libc
 * vì có bug UAF, ta có thể truy cập vào dữ liệu bên trong freed chunk, ta leak địa chỉ `(main_arena)` với `showHeap()`  
 
-Có được địa chỉ leak, tính ra libc.address và one_gadget
+Có được địa chỉ leak, tính ra libc.address và system 
 
 ![image](images/heap6/img1.png)
 
-Ta tiếp tục tận dùng bug UAF để khai thác  
+Ta tiếp tục tận dùng bug UAF để khai thác lỗ hổng tiếp theo: 
+
+Với hàm `editHeap()` cho phép overwrite vào fd của freed chunk
+
+Vì tcachebins theo cấu trúc LIFO, ta sẽ overwrite vào fd của chunk cuối được free() trên tcachebins (chunk thứ 7)
+
+==> Đây là bug liên quan tới **tcache poisoning**
+
+Bug giúp ta chuyển hướng con trỏ sang vùng nhớ ta muốn: để khi tới các đợt `createHeap()` tiếp theo, malloc() sẽ trả về địa chỉ tới vùng nhớ đó và cho phép write thông tin vào.
+
+Trong trường hợp này, ta sẽ overwrite fd của freed chunk thứ 7 với địa chỉ `__free_hook`. Hàm `__free_hook` thực thi khi free() được gọi
+
+Khi đấy `createHeap()` đầu tiên, malloc() sẽ trả về địa chỉ chunk thứ 7 hợp lệ. `createHeap()` tiếp theo sẽ trả về địa chỉ của vùng nhớ `free_hook` ta tiêm vào lúc nãy.
+
+```
+Lưu ý: khác với fastbin, tcachebin không kiểm tra header hợp lệ của freed chunk sẽ trả về cho bên yêu cầu cấp phát động (chunksize ở metadata), nên ta không cần phải căn chỉnh 
+```
+Lúc này, overwrite vào vùng nhớ của `__free_hook` với `system` để khi ta gọi đến hàm free(), hàm `system` sẽ được gọi
+
+Đến đây, chương trình quay lại menu() như bình thường. Nhưng nếu chọn option `deleteHeap()` là ta thực thi system.
+
+Để có thể spawn shell, ta đến bước cuối:
+* `createHeap()`: tạo một chunk bất kỳ với input data là "/bin/sh"
+* `deleteHeap()`: sau đấy free() chunk vừa tạo chứa dòng string kia
+* Khi này, `__free_hook` gọi đến `system` và các thanh ghi chứa dòng "/bin/sh". Chương trình sẽ thực thi: `system("/bin/sh")`
 
 ![image](images/heap6/img2.1.png)
 
