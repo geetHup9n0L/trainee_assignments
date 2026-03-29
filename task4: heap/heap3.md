@@ -233,7 +233,7 @@ exit:
 ```
 * max available accounts: `5` (0 -> 4)
   
-* struct of  `(&users)[registered_idx]`:
+* struct of  `(&users)[registered_idx]` (`0x30`):
 ````c
 typedef struct {
   *name[0x20], 
@@ -404,15 +404,15 @@ undefined8 delete_user(user *active_user)
   do {
     if (4 < idx) {
 delete:
-      free(active_user->name);
-      free(active_user->password);
+      free(active_user->name);			// free name chunk 1
+      free(active_user->password);		// free password chunk 2
       if (active_user->transaction == (tx_node *)0x0) {
         puts("[-] No transaction");
       }
       else {
         transaction = active_user->transaction;
         while( true ) {
-          free_transactions(transaction->user,transaction->id & 0xffffffff);
+          free_transactions(transaction->user,transaction->id & 0xffffffff);	// free every transactions made by user
           if (transaction->*next == (tx_node *)0x0) break;
           ptr = transaction->*next;
           transaction->user = (char **)0x0;
@@ -420,9 +420,9 @@ delete:
           free(transaction);
           transaction = ptr;
         }
-        free(transaction);
+        free(transaction); // free the last transaction
       }
-      free(active_user);
+      free(active_user);  // free the user chunk
       (&users)[registered_idx] = (char **)0x0;
       return 0;
     }
@@ -505,7 +505,12 @@ pwndbg> vis
 0x1d432170      0x0000000000000000      0x0000000000000000      ................                                                                              
 0x1d432180      0x00000000000000c8      0x0000000000020e81      ................        <-- Top chunk  
 ````
-````c 
+```c
+# sender 
+0x000000003b9ac938 = 999999800
+```
+````c
+# receiver
 0x000000003b9acac8 = 1000000200
 ````
 
