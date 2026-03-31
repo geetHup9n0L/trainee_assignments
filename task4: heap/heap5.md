@@ -270,17 +270,27 @@ Bug không chỉ chỉnh lại size của chunk kế tiếp, mà còn set flag `
 PREV_INUSE (0x1): đánh dấu nếu chunk trước vẫn đang được sử dụng (chưa bị free()) 
 ```
 
-Trong metadata của chunk (0x10 đầu trước chunkdata) có 8 bytes đầu là mục `prev_size` chứa kích thước của freed chunk trước nó. Trong trường hợp chunk trước chưa được free(), thì phần metadata này không quan trọng, và có thể điền thông tin như chunkdata của chunk trước. 
+Trong metadata của chunk (`0x10` đầu trước chunkdata) có **0x08 bytes** đầu là mục `prev_size` - chứa kích thước của freed chunk trước nó. Trong trường hợp chunk trước chưa được `free()`, thì phần metadata này không quan trọng, và có thể điền thông tin như chunkdata của chunk trước. 
 
-Lưu ý là chỉ đúng với trường hợp chunk có size lớn hơn fastbin (> 0x80) bởi vì trong unsortedbin mới có cơ chế gộp và mục đích của những yếu tố trên là để gộp các freed chunks thành chunk lớn hơn. 
+Lưu ý là `prev_size` chỉ áp dụng đúng với trường hợp chunk có size lớn hơn fastbin (> 0x80) bởi vì trong unsortedbin mới có cơ chế gộp và mục đích của những yếu tố trên là để gộp các freed chunks thành chunk lớn hơn. 
+
+(Ảnh này là chunk size < 0x80)
 
 ![image](images/heap5/heap2.2.png)
 
-Khi free chunk đầu, ta nhìn metadata chunk thứ 2:
+Khi free chunk đầu, ta nhìn metadata chunk thứ 2: (chunk lần này > 0x80 để đưa vào unsortedbin)
 
 ![image](images/heap5/heap4.png)
 
 ![image](images/heap5/heap4.1.png)
+
+Sau đấy tạo tạm chunk thứ 3 để tránh gộp với top chunk. Đồng thời, `free()` chunk thứ 2
+
+![image](images/heap5/heap5.png)
+
+![image](images/heap5/heap5.1.png)
+
+Có thể thấy, hai chunks được gộp vào thành một chunk trong unsortedbin, ta thấy thông tin `prev_size` của freed chunk này ở chunk thứ 3
 
 Bằng cách kết hợp giữa set flag `PREV_INUSE` về **0** qua off-by-one và set phần `prev_size` thành chunksize của các chunk trước nó, ta có thể tạo bug overlapping chunks
 
