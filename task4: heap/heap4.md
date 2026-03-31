@@ -1,4 +1,4 @@
-### Thông tin:
+<img width="808" height="439" alt="image" src="https://github.com/user-attachments/assets/32f4fd7d-38f6-40fa-af7e-559fc378a8e8" />### Thông tin:
 
 ```c
 └─$ ls       
@@ -83,6 +83,10 @@ undefined8 createHeap(void)
   exit(0);
 }
 ```
+* `calloc((ulong)size,1);` cấp phát động chunk trên heap, đồng thời khởi tạo giá trị bên trong thành 0 
+* `store`: lưu lại địa chỉ các chunk
+* `storeSize`: lưu lại kích thước 
+
 `showHeap()`:
 ```c
 undefined8 showHeap(void)
@@ -101,6 +105,8 @@ undefined8 showHeap(void)
   exit(0);
 }
 ```
+* dùng để leak libc
+
 `editHeap()`:
 ```c
 undefined8 editHeap(void)
@@ -141,6 +147,17 @@ undefined8 editHeap(void)
   __stack_chk_fail();
 }
 ```
+* Lưu ý:
+	```c
+	    printf("Input newsize:");
+	    newsize = readInt();
+	    if (*(uint *)(storeSize + (long)idx * 4) < newsize) {
+	      *(uint *)(storeSize + (long)idx * 4) = newsize;
+	    }
+	```
+* thay đổi size của chunk nếu edit với newsize lớn hơn
+* `readStr()` với size mới trong `&storeSize` gây heap overflow sang chunk kề cận
+
 ```c
 ulong readStr(void *param_1,uint param_2)
 {
@@ -179,9 +196,99 @@ undefined8 deleteHeap(void)
   exit(0);
 }
 ```
+* `free()` các chunk được cấp phát vào bin tương ứng
+* địa chỉ freed chunk trong `&store` tại `idx` tương ứng được set về NULL
+ 
 ___
 ### Khai thác:
+Lỗ hổng chính: heap overflow
 
+**Leak libc**:
+* Tạo các chunks trước:
+
+  image1
+
+  Chức năng các chunk:
+  * chunk 1: để overflow sang chunk 2
+  * chunk 2: kích thước to hơn fastbin, để khi free() được đưa vào unsortedbin và có fd/bk là địa chỉ libc
+  * chunk 3: ngăn cách
+  * chunk 4: chunk dùng để khai thác lỗ hổng fastbin dup sau khi có được libc
+  * chunk 5: đẻ tránh gộp với bigchunk  
+
+* `deleteHeap()` free chunk thứ 2 vào unsortedbin. Giớ freed chunk 2 chứa địa chỉ libc bên trong:
+
+  image2
+
+* Để có thể leak libc này, ta sử dụng bug heap overflow qua hàm `editHeap()`
+
+  Chọn option `editHeap()` từ chunk 1, đặt newsize > size hiện tại. Lúc này cho phép heap overflow đến chunk thứ 2
+
+  Ta sẽ overwrite sao cho đủ chạm đến giá trị địa chỉ libc của fd
+
+  image3
+
+  Để leak ra dùng option `showHeap()`, mà trong hàm có :
+  ```c
+	printf("Data = %s\n",*(undefined8 *)(store + (long)idx * 8));
+  ```
+  vì hàm `print()` sẽ in ra cho đến khi gặp được byte NULL (`\x00`), mà ta đã nối phần data trong chunkdata của **chunk 1** đến địa chỉ libc của **chunk 2**
+
+  nên hoàn toàn có thể leak ra được libc
+
+* Chọn option `showHeap()` từ **chunk 1**, ta leak được:
+
+  image4
+
+  ta tính ra địa chỉ libc base:
+  ```c
+	leak_libc: 0x7faebad9bb78
+	libc_base: 0x7faebaa00000
+  ```
+  và từ đó tính các gadgets và địa chỉ liên quan:
+
+  image4.1
+
+**Giờ đến bước khai thác bug `fastbin dup`:**
+
+* Có sẵn chunk 4 tạo trước trên heap, với kích thước đủ để vào fastbin:
+
+  image5
+
+* Với `deleteHeap()` đưa chunk 4 vào fastbin:
+
+  image6
+
+* Để có `fastbin dup`, ta phải overwrite vào fd của freed chunk trong fastbin
+
+  Và ta lại sử dụng bug **heap overflow** để thực hiện điều đó
+
+  chọn `editHeap()` trên **chunk 3** ngay trước **freed chunk 4** và overwrite vào freed chunk. Vì overflow tràn từ **chunk 3** sang **chunk 4**, nên ta phải bảo đảm phần metadata (chunksize) của **chunk 4** phải giữ nguyên:
+
+  image7
+
+  Khi này trong fastbin xuất hiện fd mới - là địa chỉ trên `__malloc_hook` được căn chỉnh để bypass cái check của fastbin đến header của chunk:
+
+  image7.1
+
+* Để có thể viết giá trị vào `__malloc_hook`, ta phải gọi `createHeap()` để được trả về địa chỉ của vùng nhớ đó và viết data vào vùng đấy
+
+  * `createHeap()` đầu tiên tái sử dụng freed chunk có sẵn trên heap
+ 
+    image8
+
+	image8.1
+
+  * `createHeap()` lần tiếp theo sẽ trả về địa chỉ trên `__malloc_hook` sau khi check phần metadata là hợp lý.
+
+	Ta căn chỉnh lại payload và nhét `one_gadget` đúng chỗ trên `__malloc_hook`
+
+	Để khi mỗi lần gọi tới `malloc()`/`calloc()` sẽ thực thi `__malloc_hook` - chứa one_gadget của mình
+
+	image9
+
+Cuối cùng là gọi đến hàm `malloc()`/`calloc()` để spawn shell:
+
+image10
 ___
 
 `script.py`:
