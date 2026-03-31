@@ -85,6 +85,11 @@ undefined8 createHeap(void)
   exit(0);
 }
 ```
+* các chunk trong dải idx: 0 -> 9 (10 chunks)
+* `calloc((ulong)size,1);` tạo chunk với size tự chọn, đồng thời khởi tạo giá trị 0 trong chunkdata
+* `store`: lưu lại pointer đến chunk lần lượt tại các idx
+* `storeSize`: lưu lại size do ta chọn lần lượt tại các idx
+  
 `showHeap()`:
 ```c
 undefined8 showHeap(void)
@@ -103,6 +108,8 @@ undefined8 showHeap(void)
   exit(0);
 }
 ```
+* Có thể dùng để leak fd/libc trên chunkdata
+
 `editHeap()`:
 ```c
 undefined8 editHeap(void)
@@ -147,6 +154,26 @@ undefined8 editHeap(void)
   __stack_chk_fail();
 }
 ```
+Lưu ý:
+	```c
+	    printf("Input newsize:");
+	    newsize = readInt();
+	    if (*(uint *)(storeSize + (long)idx * 4) < newsize) {
+	      free(*(void **)(store + (long)idx * 8));
+	      ptr = malloc((ulong)newsize);
+	      *(void **)(store + (long)idx * 8) = ptr;
+	      *(uint *)(storeSize + (long)idx * 4) = newsize;
+	    }
+	```
+* nếu set size lớn hơn size hiện tại của chunk
+  --> `free()` chunk hiện tại --> `malloc()` chunk mới với size mới --> lưu mới lại vào `store` và `storeSize`
+* nếu set size bé hoặc bằng size hiện tại của chunk, giữ nguyên
+* để overwrite lại data trong chunkdata, có option:
+  ```c
+    puts("Do you want to change data (y/n)?");
+  ```
+  có thể dùng để overwrite fd 
+
 `readStr()`:
 ```c
 ulong readSTr(void *buffer,uint size)
@@ -162,6 +189,16 @@ ulong readSTr(void *buffer,uint size)
   return len & 0xffffffff;
 }
 ```
+* bug chính nằm ở đây:
+  ```c
+	*(undefined1 *)((long)buffer + (long)(int)len) = 0;
+  ```
+
+  `readStr()` sẽ set thêm byte cuối cùng của data input thành null
+
+  --> bug: off by one
+  --> có thể dùng để chỉnh sửa metadata của chunk kế tiếp trong heap với bug này (cụ thể là chunksize)
+
 `deleteHeap()`:
 ```c
 undefined8 deleteHeap(void)
@@ -182,8 +219,55 @@ undefined8 deleteHeap(void)
   exit(0);
 }
 ```
+* `free()` chunk cấp phát
+* sau đó set giá trị trong `store` tại idx tương ứng thành NULL 
 ___
 ## Khai thác:
+Lỗ hổng: off-by-one 
+
+Tại hàm `readStr`:
+```c
+ulong readSTr(void *buffer,uint size)
+{
+  ulong len;
+  
+  len = read(0,buffer,(ulong)size);
+  if ((int)len < 0) {
+    exit(0);
+  }
+  *(undefined1 *)((long)buffer + (long)(int)len) = 0;
+  return len & 0xffffffff;
+}
+```
+Dù hàm này có ở cả `createHeap()` và `editHeap()`, nhưng chỉ tận dụng được ở `editHeap()` vì lúc này các chunks đã được tạo sẵn và xếp kề nhau trên heap
+
+Ta thử nghiệm bug trên, trước hết tạo 2 chunk:
+```python
+createHeap(b'0', 0x68, b'A'*0x68)
+createHeap(b'1', 0x128, b'B'*0x128)
+```
+
+![image](images/heap5/heap1.2.png)
+
+Sau đấy, `editHeap()` với chunk đầu tiên:
+```python
+editHeap(b'0', 0x68, b'y', b'C'*0x68)
+```
+
+![image](images/heap2/heap2.png)
+
+![image](images/heap2/heap3.png)
+
+
+Có thể thấy, chunksize của chunk thứ 2 bị thay đổi (131 --> 100)
+
+Đó là vì phần null thừa ra đã overflow và overwrite đến metadata của chunk kế tiếp
+
+Bug không chỉ chỉnh lại size của chunk kế tiếp, mà còn set flag `PREV_INUSE` về 0
+
+```c
+PREV_INUSE (0x1): đánh dấu nếu chunk trước vẫn đang được sử dụng (chưa bị free()) 
+```
 
 ___
 <img width="659" height="290" alt="image" src="https://github.com/user-attachments/assets/0606f4f0-7dcd-4e6e-aba4-4e0cab52f700" />
