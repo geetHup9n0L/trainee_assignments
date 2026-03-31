@@ -280,11 +280,27 @@ Lưu ý là `prev_size` chỉ áp dụng đúng với trường hợp chunk có 
 
 Khi free chunk đầu, ta nhìn metadata chunk thứ 2: (chunk lần này > 0x80 để đưa vào unsortedbin)
 
+```c
+createHeap(b'0', 0x88, b'A'*0x87)
+createHeap(b'1', 0x128, b'B'*0x127)
+
+deleteHeap(b'0')
+```
+
 ![image](images/heap5/heap4.png)
 
 ![image](images/heap5/heap4.1.png)
 
 Sau đấy tạo tạm chunk thứ 3 để tránh gộp với top chunk. Đồng thời, `free()` chunk thứ 2
+
+```c
+createHeap(b'0', 0x88, b'A'*0x87)
+createHeap(b'1', 0x128, b'B'*0x127)
+createHeap(b'2', 0x68, b'A'*0x67)
+
+deleteHeap(b'0')
+deleteHeap(b'1')
+```
 
 ![image](images/heap5/heap5.png)
 
@@ -292,9 +308,102 @@ Sau đấy tạo tạm chunk thứ 3 để tránh gộp với top chunk. Đồng
 
 Có thể thấy, hai chunks được gộp vào thành một chunk trong unsortedbin, ta thấy thông tin `prev_size` của freed chunk này ở chunk thứ 3
 
-Bằng cách kết hợp giữa set flag `PREV_INUSE` về **0** qua off-by-one và set phần `prev_size` thành chunksize của các chunk trước nó, ta có thể tạo bug overlapping chunks
+**Ý tưởng**:
+
+Bằng cách kết hợp giữa set flag `PREV_INUSE` về **0** qua off-by-one và set phần `prev_size` thành chunksize của các chunk trước nó, ta có thể tạo bug overlapping chunks - hiện tượng khi mà một chunk bao gồm một chunk khác bên trong 
+
+Giả sử giữa 2 chunks lớn ở ví dụ trên có kẹp một chunk kích thước fastbin, và khi ta `free()` các chunks đó đồng thời điều khiển được giá trị metadata thì lúc này trong `unsortedbin` sẽ có một freedchunk lớn gộp kích thước của cả 3 chunks và bên cạnh đó cũng có freed chunk trong `fastbin`. Có nghĩa là ta unlock bug UAF cho phép điều khiển bên trong freedchunk trên
+
+```
+What can we do by clearing the previous chunk in use flag? The purpose of the flag is make it possible to consolidate adjacent free chunks. If there is a free chunk on the heap and the chunk right after this free chunk is also free, those two free chunks can be combined to a big free chunk. This way heap-fragmentation can be avoided (if there wouldn’t be chunks in fastbin-size, which are not consolidated). When a chunk is free’d, the libc checks if the previous chunk in use flag is set. If it is not, the chunk, which is supposed to be free’d, is consolidated with the precending free chunk. By clearing the previous chunk in use flag we can trick the libc into consolidating a free chunk with an actually allocated chunk, which precedes the free chunk.
+```
 
 **Thực hiện**:
+
+Leak libc: mục tiêu là leak fd/bk (main_arena) từ chunk trong unsortedbin
+
+* Trước hết là tạo các chunks:
+
+  heap6
+  
+  ![image](images/heap5/heap6.png)
+
+  Chức năng các chunk:
+  
+  * chunk 1: sẽ được free() để gộp với các chunk sau
+  * chunk 2: thực hiện bug off-by-one, overwrite lại metadata của chunk 3 (`prev_size` sẽ thành tổng size của chunk 1 + chunk 2)
+  * chunk 3: bị sửa metadata bởi chunk 2, khi free() chunk này sẽ gộp với chunk 1. Việc gộp thành chunk lớn sẽ bao gồm (gộp) luôn cả chunk 2 ở giữa
+  * chunk 4: kích thước fastbin để tránh gộp với topchunk
+ 
+* `free()` chunk thứ nhất, chunk 1 sẽ trở thành một freed chunk có chứa địa chỉ libc ở fd/bk
+
+  heap7
+  
+  ![image](images/heap5/heap7.png)
+
+  bên cạnh đấy, metadata của chunk 2 cho thấy `prev_size` của freed chunk 1 là `0x100`
+
+* Tiếp, thực hiện bug **off-by-one** từ chunk 2 thông qua hàm `editHeap()`. Thay đổi giá trị `prev_size` và `size/flag` của chunk 3
+  * `prev_size` trên chunk 3 thành tổng size **chunk 1 + chunk2** (= `0x170`)
+  * `size/flag` bị null byte đầu tiên bởi hàm `readStr()` (từ `0x101` --> `0x100`)
+ 
+  heap8
+  
+  ![image](images/heap5/heap8.png)
+
+* Và khi ta `free()` chunk 3 với metadata đã bị thay đổi, chunk 3 sẽ gộp với các chunk trước nó (chunk 1 + chunk 2).
+  
+  Bởi vì `prev_size` được đặt là `0x170` và flag `PREV_INUSE` = `0`, chunk 3 sẽ coi là đang tồn tại một freed chunk có size `0x170` trước nó, nên thực hiện việc gộp cả freed chunk 1 và cả chunk 2 vốn vẫn ở trạng thái được cấp phát (vẫn lưu ở trong `&store`)
+
+  Lúc này, ta có một freed chunk lớn có kích thước là `0x270` overlapping với chunk 2:
+
+  heap9
+  
+  ![image](images/heap5/heap9.png)
+
+  heap9.1
+  
+  ![image](images/heap5/heap9.1.png)
+
+  heap9.2
+  
+  ![image](images/heap5/heap9.2.png)
+   // lay nham
+
+* Giờ để có thể leak libc, phải in ra được địa chỉ libc của fd/bk trong freed chunk
+
+  Ta sẽ cấp phát với `createHeap()` với size của chunk 1 (0x100) để cấp phát lại đúng chunk 1. Khi này, chương trình sẽ cắt một đoạn bằng `0x100` từ unsortedbin ra cho chunk 1, phần freed chunk còn lại trong unsortedbin sẽ bị thu lại, lúc này đẩy con trỏ fd/bk ban đầu ở vị trí trên xuống đúng vị trí của chunk 2
+
+  Chunk 2 đang ở vị trí: `0x55668bef3100`/`0x55668bef3110`
+
+  heap9.3
+  
+  ![image](images/heap5/heap9.3.png)
+
+  Lưu ý: khi điền vào phần chunkdata của chunk được tạo, giới hạn input để tránh thực hiện bug off-by-one vào chunk 2, gây heap corruption
+
+  heap10
+  
+  ![image](images/heap5/heap10.png)
+
+  heap11
+  
+  ![image](images/heap5/heap11.png)
+
+  Vì ta vẫn có thể truy cập chunk 2 ở trong `&store` nêu trên, ta thực hiện `showHeap()` để leak địa chỉ libc:
+
+  heap12
+  
+  ![image](images/heap5/heap12.png)
+
+  Tính ra `libc.address` và các hàm khác
+  ```
+  leak_libc: 0x7f91f999bb78
+  |
+  libc_base: 0x7f91f9600000
+  ```
+  
+Tiếp đến là cách để spawn shell, phải tìm cách thực hiện bug `fastbin dup`
 
 ___
 <img width="659" height="290" alt="image" src="https://github.com/user-attachments/assets/0606f4f0-7dcd-4e6e-aba4-4e0cab52f700" />
