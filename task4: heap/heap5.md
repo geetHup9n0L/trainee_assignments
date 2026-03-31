@@ -323,8 +323,6 @@ What can we do by clearing the previous chunk in use flag? The purpose of the fl
 Leak libc: mục tiêu là leak fd/bk (main_arena) từ chunk trong unsortedbin
 
 * Trước hết là tạo các chunks:
-
-  heap6
   
   ![image](images/heap5/heap6.png)
 
@@ -336,8 +334,6 @@ Leak libc: mục tiêu là leak fd/bk (main_arena) từ chunk trong unsortedbin
   * chunk 4: kích thước fastbin để tránh gộp với topchunk
  
 * `free()` chunk thứ nhất, chunk 1 sẽ trở thành một freed chunk có chứa địa chỉ libc ở fd/bk
-
-  heap7
   
   ![image](images/heap5/heap7.png)
 
@@ -346,8 +342,6 @@ Leak libc: mục tiêu là leak fd/bk (main_arena) từ chunk trong unsortedbin
 * Tiếp, thực hiện bug **off-by-one** từ chunk 2 thông qua hàm `editHeap()`. Thay đổi giá trị `prev_size` và `size/flag` của chunk 3
   * `prev_size` trên chunk 3 thành tổng size **chunk 1 + chunk2** (= `0x170`)
   * `size/flag` bị null byte đầu tiên bởi hàm `readStr()` (từ `0x101` --> `0x100`)
- 
-  heap8
   
   ![image](images/heap5/heap8.png)
 
@@ -356,44 +350,27 @@ Leak libc: mục tiêu là leak fd/bk (main_arena) từ chunk trong unsortedbin
   Bởi vì `prev_size` được đặt là `0x170` và flag `PREV_INUSE` = `0`, chunk 3 sẽ coi là đang tồn tại một freed chunk có size `0x170` trước nó, nên thực hiện việc gộp cả freed chunk 1 và cả chunk 2 vốn vẫn ở trạng thái được cấp phát (vẫn lưu ở trong `&store`)
 
   Lúc này, ta có một freed chunk lớn có kích thước là `0x270` overlapping với chunk 2:
-
-  heap9
   
   ![image](images/heap5/heap9.png)
 
-  heap9.1
-  
   ![image](images/heap5/heap9.1.png)
-
-  heap9.2
-  
-  ![image](images/heap5/heap9.2.png)
-   // lay nham
 
 * Giờ để có thể leak libc, phải in ra được địa chỉ libc của fd/bk trong freed chunk
 
   Ta sẽ cấp phát với `createHeap()` với size của chunk 1 (0x100) để cấp phát lại đúng chunk 1. Khi này, chương trình sẽ cắt một đoạn bằng `0x100` từ unsortedbin ra cho chunk 1, phần freed chunk còn lại trong unsortedbin sẽ bị thu lại, lúc này đẩy con trỏ fd/bk ban đầu ở vị trí trên xuống đúng vị trí của chunk 2
 
   Chunk 2 đang ở vị trí: `0x55668bef3100`/`0x55668bef3110`
-
-  heap9.3
   
   ![image](images/heap5/heap9.3.png)
 
   Lưu ý: khi điền vào phần chunkdata của chunk được tạo, giới hạn input để tránh thực hiện bug off-by-one vào chunk 2, gây heap corruption
 
-  heap10
-  
   ![image](images/heap5/heap10.png)
 
-  heap11
-  
   ![image](images/heap5/heap11.png)
 
   Vì ta vẫn có thể truy cập chunk 2 ở trong `&store` nêu trên, ta thực hiện `showHeap()` để leak địa chỉ libc:
 
-  heap12
-  
   ![image](images/heap5/heap12.png)
 
   Tính ra `libc.address` và các hàm khác
@@ -424,15 +401,7 @@ Tiếp đến là cách để spawn shell, phải tìm cách thực hiện bug `
 
   **newsize** mới sẽ đặt đủ lớn để có thể overwrite đến phần fd của **chunk 2** từ **chunk 1**. Trong trường hợp này, ta edit **chunk 1** từ `0x100` lên `0x110`
 
-  heap13
-
   ![image](images/heap5/heap13.png)
-
-  heap13.1 // sai
-
-  ![image](images/heap5/heap13.1.png)
-
-  heap13.2 // sua lại
 
   ![image](images/heap5/heap13.2.png)
   
@@ -473,9 +442,9 @@ Tiếp đến là cách để spawn shell, phải tìm cách thực hiện bug `
 
   	![image](images/heap5/heap15.1.png)
 
-  vậy ta đã khai thác được bug `fastdup`
+  vậy ta đã khai thác được bug `fastbin dup`
 
-* Việc còn lại là `createHeap()` vài lần với size của freed chunk trong fastbin (`0x70`) và căn chỉnh và viết vào `malloc_hook` với giá trị `one_gadget`. Và gọi đến `malloc()` phát nữa để kích hoạt shell trong `malloc_hook`
+* Việc còn lại là `createHeap()` vài lần với size của freed chunk trong fastbin (`0x70`) và căn chỉnh viết vào `malloc_hook` với giá trị của `one_gadget`. Và gọi đến `malloc()` phát nữa để kích hoạt shell trong `malloc_hook`
 
   heap16
 
