@@ -220,7 +220,7 @@ undefined8 deleteHeap(void)
 }
 ```
 * `free()` chunk cấp phát
-* sau đó set giá trị trong `store` tại idx tương ứng thành NULL 
+* sau đó set giá trị trong `store` tại idx tương ứng thành **NULL** 
 ___
 ## Khai thác:
 Lỗ hổng: off-by-one 
@@ -254,16 +254,16 @@ Sau đấy, `editHeap()` với chunk đầu tiên:
 editHeap(b'0', 0x68, b'y', b'C'*0x68)
 ```
 
-![image](images/heap2/heap2.png)
+![image](images/heap5/heap2.png)
 
-![image](images/heap2/heap3.png)
+![image](images/heap5/heap3.png)
 
 
-Có thể thấy, chunksize của chunk thứ 2 bị thay đổi (131 --> 100)
+Có thể thấy, chunksize của chunk thứ 2 bị thay đổi (`131` --> `100`)
 
-Đó là vì phần null thừa ra đã overflow và overwrite đến metadata của chunk kế tiếp
+Đó là vì phần **null** thừa ra đã overflow và overwrite đến metadata của chunk kế tiếp
 
-Bug không chỉ chỉnh lại size của chunk kế tiếp, mà còn set flag `PREV_INUSE` về 0
+Bug không chỉ chỉnh lại size của chunk kế tiếp, mà còn set flag `PREV_INUSE` về **0**
 
 ```c
 PREV_INUSE (0x1): đánh dấu nếu chunk trước vẫn đang được sử dụng (chưa bị free()) 
