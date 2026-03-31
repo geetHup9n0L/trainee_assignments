@@ -270,6 +270,12 @@ Bug không chỉ chỉnh lại size của chunk kế tiếp, mà còn set flag `
 PREV_INUSE (0x1): đánh dấu nếu chunk trước vẫn đang được sử dụng (chưa bị free()) 
 ```
 
+Trong metadata của chunk (0x10 đầu trước chunkdata) có 8 bytes đầu là mục `prev_size` chứa kích thước của freed chunk trước nó. Trong trường hợp chunk trước chưa được free(), thì phần metadata này không quan trọng, và có thể điền như chunkdata từ chunk trước
+
+heap2.2
+
+Bằng cách kết hợp giữa set flag `PREV_INUSE` về **0** qua off-by-one và set phần `prev_size` thành chunksize của các chunk trước nó, ta có thể tạo bug overlapping chunks
+
 ___
 <img width="659" height="290" alt="image" src="https://github.com/user-attachments/assets/0606f4f0-7dcd-4e6e-aba4-4e0cab52f700" />
 
