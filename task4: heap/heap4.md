@@ -1,4 +1,4 @@
-<img width="808" height="439" alt="image" src="https://github.com/user-attachments/assets/32f4fd7d-38f6-40fa-af7e-559fc378a8e8" />### Thông tin:
+### Thông tin:
 
 ```c
 └─$ ls       
@@ -207,6 +207,7 @@ Lỗ hổng chính: heap overflow
 * Tạo các chunks trước:
 
   image1
+  ![image](images/heap4/image1.png)
 
   Chức năng các chunk:
   * chunk 1: để overflow sang chunk 2
@@ -218,6 +219,7 @@ Lỗ hổng chính: heap overflow
 * `deleteHeap()` free chunk thứ 2 vào unsortedbin. Giớ freed chunk 2 chứa địa chỉ libc bên trong:
 
   image2
+  ![image](images/heap4/image2.png)
 
 * Để có thể leak libc này, ta sử dụng bug heap overflow qua hàm `editHeap()`
 
@@ -226,6 +228,7 @@ Lỗ hổng chính: heap overflow
   Ta sẽ overwrite sao cho đủ chạm đến giá trị địa chỉ libc của fd
 
   image3
+  ![image](images/heap4/image3.png)
 
   Để leak ra dùng option `showHeap()`, mà trong hàm có :
   ```c
@@ -238,6 +241,7 @@ Lỗ hổng chính: heap overflow
 * Chọn option `showHeap()` từ **chunk 1**, ta leak được:
 
   image4
+  ![image](images/heap4/image4.png)
 
   ta tính ra địa chỉ libc base:
   ```c
@@ -247,16 +251,19 @@ Lỗ hổng chính: heap overflow
   và từ đó tính các gadgets và địa chỉ liên quan:
 
   image4.1
+  ![image](images/heap4/image4.1.png)
 
 **Giờ đến bước khai thác bug `fastbin dup`:**
 
 * Có sẵn chunk 4 tạo trước trên heap, với kích thước đủ để vào fastbin:
 
   image5
+  ![image](images/heap4/image5.png)
 
 * Với `deleteHeap()` đưa chunk 4 vào fastbin:
 
   image6
+  ![image](images/heap4/image6.png)
 
 * Để có `fastbin dup`, ta phải overwrite vào fd của freed chunk trong fastbin
 
@@ -265,18 +272,22 @@ Lỗ hổng chính: heap overflow
   chọn `editHeap()` trên **chunk 3** ngay trước **freed chunk 4** và overwrite vào freed chunk. Vì overflow tràn từ **chunk 3** sang **chunk 4**, nên ta phải bảo đảm phần metadata (chunksize) của **chunk 4** phải giữ nguyên:
 
   image7
+  ![image](images/heap4/image7.png)
 
   Khi này trong fastbin xuất hiện fd mới - là địa chỉ trên `__malloc_hook` được căn chỉnh để bypass cái check của fastbin đến header của chunk:
 
   image7.1
+  ![image](images/heap4/image7.1.png)
 
 * Để có thể viết giá trị vào `__malloc_hook`, ta phải gọi `createHeap()` để được trả về địa chỉ của vùng nhớ đó và viết data vào vùng đấy
 
   * `createHeap()` đầu tiên tái sử dụng freed chunk có sẵn trên heap
  
     image8
+    ![image](images/heap4/image8.png)
 
 	image8.1
+	![image](images/heap4/image8.1.png)
 
   * `createHeap()` lần tiếp theo sẽ trả về địa chỉ trên `__malloc_hook` sau khi check phần metadata là hợp lý.
 
@@ -285,10 +296,12 @@ Lỗ hổng chính: heap overflow
 	Để khi mỗi lần gọi tới `malloc()`/`calloc()` sẽ thực thi `__malloc_hook` - chứa one_gadget của mình
 
 	image9
+	![image](images/heap4/image9.png)
 
 Cuối cùng là gọi đến hàm `malloc()`/`calloc()` để spawn shell:
 
 image10
+![image](images/heap4/image10.png)
 ___
 
 `script.py`:
