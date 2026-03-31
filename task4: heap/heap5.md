@@ -154,24 +154,25 @@ undefined8 editHeap(void)
   __stack_chk_fail();
 }
 ```
-Lưu ý:
+* Lưu ý:
+
 	```c
-	    printf("Input newsize:");
-	    newsize = readInt();
-	    if (*(uint *)(storeSize + (long)idx * 4) < newsize) {
-	      free(*(void **)(store + (long)idx * 8));
-	      ptr = malloc((ulong)newsize);
-	      *(void **)(store + (long)idx * 8) = ptr;
-	      *(uint *)(storeSize + (long)idx * 4) = newsize;
-	    }
+	printf("Input newsize:");
+	newsize = readInt();
+	if (*(uint *)(storeSize + (long)idx * 4) < newsize) {
+		free(*(void **)(store + (long)idx * 8));
+		ptr = malloc((ulong)newsize);
+		*(void **)(store + (long)idx * 8) = ptr;
+		*(uint *)(storeSize + (long)idx * 4) = newsize;
+	}
 	```
 * nếu set size lớn hơn size hiện tại của chunk
   --> `free()` chunk hiện tại --> `malloc()` chunk mới với size mới --> lưu mới lại vào `store` và `storeSize`
 * nếu set size bé hoặc bằng size hiện tại của chunk, giữ nguyên
 * để overwrite lại data trong chunkdata, có option:
-  ```c
+  	```c
     puts("Do you want to change data (y/n)?");
-  ```
+  	```
   có thể dùng để overwrite fd 
 
 `readStr()`:
