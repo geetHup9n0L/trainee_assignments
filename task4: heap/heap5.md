@@ -403,12 +403,97 @@ Leak libc: mục tiêu là leak fd/bk (main_arena) từ chunk trong unsortedbin
   libc_base: 0x7f91f9600000
   ```
   
-Tiếp đến là cách để spawn shell, phải tìm cách thực hiện bug `fastbin dup`
+Tiếp đến là cách để spawn shell, phải tìm cách thực hiện bug `fastbin dup`:
 
+* Ta vẫn sẽ tận dụng **chunk 2** để có `fastbin dup`, mục tiêu sẽ là có **chunk 2** trong fastbin và overwrite vào phần fd của **chunk 2** thành địa chỉ mong muốn
+
+* Trước hết, khôi phục lại metadata của **chunk 2** về đúng chuẩn size ban đầu của nó
+
+  Bằng cách sử dụng `editHeap()` trên **chunk 1** với newsize > size ban đầu, như ta phân tích lúc trước:
+	```c
+	printf("Input newsize:");
+	newsize = readInt();
+	if (*(uint *)(storeSize + (long)idx * 4) < newsize) {
+		free(*(void **)(store + (long)idx * 8));
+		ptr = malloc((ulong)newsize);
+		*(void **)(store + (long)idx * 8) = ptr;
+		*(uint *)(storeSize + (long)idx * 4) = newsize;
+	}
+	```
+  Khi này, chương trình sẽ `free()` **chunk 1** hiện tại vào unsortedbin, gộp với freed chunk trước (chunk 2 + chunk 3), rồi lại `malloc()` cấp phát lại chunk từ unsortedbin đấy với newsize
+
+  **newsize** mới sẽ đặt đủ lớn để có thể overwrite đến phần fd của **chunk 2** từ **chunk 1**. Trong trường hợp này, ta edit **chunk 1** từ `0x100` lên `0x110`
+
+  heap13
+
+  ![image](images/heap5/heap13.png)
+
+  heap13.1 // sai
+
+  ![image](images/heap5/heap13.1.png)
+
+  heap13.2 // sua lại
+
+  ![image](images/heap5/heap13.2.png)
+  
+  bổ sung heap13.3 (in phần &store)
+
+  Tại vị trí `0x55668bef3100` là metadata của **chunk 2** đã được khôi phục. Lúc này, phần freed chunk đã được cắt giảm từ `0x170` xuống `0x160`, thu hẹp lại xuống dưới
+
+* Giờ có thể gọi `deleteHeap()` để `free()` cả **chunk 2** và **chunk 1**.
+  * **chunk 2**: được đưa vào `fastbin`
+
+	heap14
+
+	![image](images/heap5/heap14.png)
+
+	heap14.1
+
+	![image](images/heap5/heap14.1.png)
+
+  * **chunk 1** (`0x110`) lại gộp với phần unsortedbin còn lại, lại tạo thành một freed chunk lớn.
+ 
+    heap14.2
+ 
+    ![image](images/heap5/heap14.2.png)
+
+	heap14.3
+
+	![image](images/heap5/heap14.3.png)
+
+* Để overwrite vào fd của freed chunk trong fastbin, ta lại cấp phát một **chunk 1** đủ lớn tới phần fd của freed **chunk 2** (0x110)
+
+  Sau đấy, điền data overwrite vào phần fd địa chỉ `fake_chunk` của mình (`__malloc_hook - 0x23`)
+
+	heap15
+
+	![image](images/heap5/heap15.png)
+
+  	heap15.1
+
+  	![image](images/heap5/heap15.1.png)
+
+  vậy ta đã khai thác được bug `fastdup`
+
+* Việc còn lại là `createHeap()` vài lần với size của freed chunk trong fastbin (`0x70`) và căn chỉnh và viết vào `malloc_hook` với giá trị `one_gadget`. Và gọi đến `malloc()` phát nữa để kích hoạt shell trong `malloc_hook`
+
+  heap16
+
+  ![image](images/heap5/heap16.png)
+
+  heap16.2
+
+  ![image](images/heap5/heap16.2.png)
+
+  heap16.1
+
+  ![image](images/heap5/heap16.1.png)
+
+  heap17
+
+  ![image](images/heap5/heap17.png)
 ___
-<img width="659" height="290" alt="image" src="https://github.com/user-attachments/assets/0606f4f0-7dcd-4e6e-aba4-4e0cab52f700" />
-
-final script.py:
+final `script.py`:
 
 ```python
 from pwn import *
