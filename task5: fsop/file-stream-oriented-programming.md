@@ -83,8 +83,19 @@ Nên cái cốt lõi của FSOP nằm ở việc: nếu ta có thể overwrite g
 
 ___
 ### Các phương thức khai thác `FILE` qua các phiên bản libc: 
+Các phương pháp FSOP sẽ khác nhau phụ thuộc vào các bản libc của chương trình:
 
+* `libc <= 2.23`:
+  - Không có sự kiểm tra trên con trỏ vtable
+  - Có thể khai thác thông qua việc overwrite giá trị con trỏ của trường vtable với địa chỉ bất kỳ trong vùng nhớ (stack, heap, bss), nơi mà có chứa cấu trúc vtable giả tạo. Có các kỹ thuật như là: House of Orange hoặc chiếm đoạt vtable thông thường
 
+ * `libc 2.24 - 2.27` (có `_IO_vtable_check`)
+   - Glibc phiên bản này giới thiệu đến hàm `IO_validate_vtable()`. Trước khi bất kỳ hàm vtable nào được gọi đến, glibc sẽ kiểm tra xem địa chỉ con trỏ của trường vtable có nằm trong vùng nhớ read-only `__libc_IO_vtables` không. Nếu nó trỏ đến vùng nhớ heap hoặc stack, thì chương trình abort
+   - Bây giờ không thể trỏ vtable đến vùng nhớ theo ý chọn. Thay vào đó, ta phải trỏ vtable đến các khối vtables hợp lệ. Một cách bypass phổ biến là `_IO_str_jumps` bypass. Bằng cách trỏ vtable đến `_IO_str_jumps` (dùng cho `printf`), ta có thể khai thác các hàm `_IO_str_overflow` hoặc `_IO_str_finish`, hàm có chứa lời gọi đến địa chỉ bên trong cấu trúc `FILE` (`_s._allocate_buffer`), cho phép thực thi code. Chỉ cần chỉnh các trường trong cấu trúc một cách hợp lý thì có thể gọi đến system("bin/sh")
+  
+* `libc >= 2.28`
+  - Bên glibc đã vá lại cái `_IO_str_jumps` bypass, loại bỏ lỗ hổng thông qua việc không cho các luồng string gọi đến các con trỏ hàm trong cấu trúc `FILE` để được cấp phát. Trong các bản mới hơn (2.32+) giới thiệu đến mangling (safe-linking) cho tcache/fastbins, và bản 2.34 xóa bỏ `__malloc_hook` và `__free_hook` hoàn toàn.
+  - Hướng tới các kỹ thuật mới hơn (House of Apple, House of Kiwi, House of Emma). Những kỹ thuật vấn tuân theo cái check của vtable, nhưng giờ sẽ khai thác con trỏ `_wide_data` hoặc các hàm nằm sâu bên trong vtables như `_IO_wfile_jumps`. Thường phải dựa vào một số flags cụ thể để đưa glibc về kiểu ký tự rộng để rồi cho phép điều khiển thanh ghi hoặc thực thi code. 
 
 
 ### Các kỹ thuật phổ biến:
