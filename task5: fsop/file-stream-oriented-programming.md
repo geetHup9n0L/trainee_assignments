@@ -100,7 +100,15 @@ Các phương pháp FSOP sẽ khác nhau phụ thuộc vào các bản libc củ
 
 ### Các kỹ thuật phổ biến:
 
-1. Classic FSOP — Vtable Hijacking (pre-glibc 2.24)
+Để có thể khai thác các cấu trúc `FILE` thường phải tồn tại trước các lỗ hổng bộ nhớ. Nổi bật là các lỗ hổng liên quan đến heap như là Use-After-Free (UAF) hoặc Double Free được sử dụng để tạo một cấu trúc `_IO_FILE` trên heap hoặc overwrite cái có sẵn (như stdin, stdout, or stderr). Tool như `pwntool` hỗ trợ tạo các đối tượng `FileStructure` này.
+
+1. Arbitrary Read / Arbitrary Write:
+
+Bằng cách khai thác các con trỏ buffer bên trong cấu trúc `FILE` (như là _IO_write_base, _IO_write_ptr, _IO_read_base, and _IO_buf_end), ta bắt chương trình phải đọc hoặc viết vào vùng nhớ bất kỳ
+* Arbitrary Read:
+* Arbitrary Write:
+
+3. Classic FSOP — Vtable Hijacking (pre-glibc 2.24)
 
 Các bản glibc trước 2.24, không có sự kiểm tra hay xác thực trên con trỏ `vtable`. Nên ta có thể thực hiện khai thác như ý tưởng trên:
 * Tạo một cấu trúc `_IO_FILE` giả trên vùng nhớ writable bất kỳ (có thể là heap, BSS)
@@ -108,9 +116,9 @@ Các bản glibc trước 2.24, không có sự kiểm tra hay xác thực trên
 * Ta nhét cái khối `FILE` giả này vào danh sách `_IO_list_all` (thông qua việc heap exploit)
 * Cuối cùng, gọi `exit()` hoặc `fflush()`, glibc sẽ chạy qua danh sách, gọi đến một con trỏ hàm trong `vtables` (như `__overflow` hoặc `__finish`) giả của mình --> thực thi code
 
-2. House of Orange - `_IO_str_overflow` (glibc 2.23 - 2.24)
+3. House of Orange - `_IO_str_overflow` (glibc 2.23 - 2.24)
 
-
+4. House of Apple
 
 
 
