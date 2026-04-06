@@ -1,11 +1,15 @@
 ## File Stream Oriented Programming (FSOP)
 
-FSOP là một kỹ thuật khai thác lỗ hổng nâng cao, tận dụng cấu trúc `FILE` (hay còn gọi là `_IO_FILE`) có sẵn trong thư viện của C chuẩn - dùng để quản lý các luồng nhập/xuất (I/O) tệp tin. Bởi vì trong các cấu trúc `FILE` tồn tại một **vtable pointer** (`_IO_jump_t *vtable`) và các `fields`, đều nằm trong vùng nhớ **writable** và được sử dụng trong quá trình nhập/xuất (I/O) qua các hàm như: `fopen`, `fclose`, `fflush`, `exit`,...
+FSOP là một kỹ thuật khai thác lỗ hổng nâng cao, tận dụng cấu trúc `FILE` (hay còn gọi là `_IO_FILE`) có sẵn trong thư viện của C chuẩn - dùng để quản lý các luồng nhập/xuất (I/O) tệp tin. 
 
 ___
 ### Cấu trúc của `_IO_FILE`:
 
-Đối với mỗi kiểu `FILE *` (như `stdin`, `stdout`, `stderr`) được cấu thành bởi cấu trúc `struct _IO_FILE` trong glibc. Các trường trong cấu trúc bao gồm:
+Trong thư viện C tiêu chuẩn (glibc), với mỗi kiểu file I/O (như `stdin`, `stdout`, `stderr`) được cấu thành và quản lý bởi cấu trúc `struct _IO_FILE`.
+
+Và cấu trúc trên sử dụng kỹ thuật **Buffered I/O system** - kỹ thuật sử dụng một vùng nhớ tạm thời (bộ đệm - buffer) để làm trung gian lưu trữ dữ liệu giữa ứng dụng và và file. Phương pháp này nhằm tối ưu hóa hiệu năng thông qua việc gom nhiều thao tác I/O nhỏ thành một lần truyền dữ liệu lớn, giảm số lần gọi hệ thống (system calls).
+
+Các trường trong cấu trúc bao gồm:
 
 ```c
 struct _IO_FILE {
@@ -22,9 +26,9 @@ struct _IO_FILE {
     struct _IO_FILE  *_chain;   // Linked list of all open FILE objects
     int               _fileno;  // File descriptor
     // ...
-    const struct _IO_jump_t *vtable;  // <-- THE KEY TARGET
 };
 ```
+
 Có trường `_flags` điều khiển cách luồng hoạt động, với các giá trị:
 
 | Flag | Value | Meaning |
@@ -35,6 +39,20 @@ Có trường `_flags` điều khiển cách luồng hoạt động, với các 
 | `_IO_NO_WRITES` | `0x0008` | Writing not allowed |
 | `_IO_CURRENTLY_PUTTING` | `0x0800` | Currently in write mode |
 | `_IO_IS_APPENDING` | `0x1000` | Append mode |
+
+Bởi vì vùng nhớ buffer của `FILE` nằm trong vùng nhớ, ta có thể overwrite vào các trường và điều khiển nơi glibc có thể đọc data vào hoặc viết data từ đó ra. Khi đó, ta khả năng có:
+
+* Arbitrary Write: sử dụng `fread()` overwrite vào địa chỉ vùng nhớ ta chọn
+* Arbitrary Read: sử dụng `fwrite()` leak data từ vùng nhớ bất kỳ ra file/stdout
+
+Trong bản mới hơn `_IO_FILE_plus`, giới thiệu đến trường `vtable` - được bổ sung vào cấu trúc `_IO_FILE` trước đó:
+```c
+struct _IO_FILE_plus
+{
+  FILE file;            /* The struct described in the table above */
+  const struct _IO_jump_t *vtable; /* The jump table pointer at offset 0xd8 */
+};
+```
 
 Đặc biệt có trường `_chain`: là một chuỗi danh sách liên kết đơn nối các đối tượng kiểu `FILE` với nhau, xuất phát từ con trỏ `_IO_list_all`. Khi chương trình gọi đến `exit()`, chương trình glibc sẽ gọi đến `_IO_flush_all_lockp`, thực hiện các phương thức `vtable` của mỗi đối tượng trong danh sách
 
@@ -59,8 +77,9 @@ struct _IO_jump_t {
     // ...
 };
 ```
+Bởi vì trong các cấu trúc `FILE` tồn tại một **vtable pointer** (`_IO_jump_t *vtable`) và các `fields`, đều nằm trong vùng nhớ **writable** và được sử dụng trong quá trình nhập/xuất (I/O) qua các hàm như: `fopen`, `fclose`, `fflush`, `exit`,...
 
-Cái cốt lõi của FSOP nằm ở việc: nếu ta có thể overwrite giá trị con trỏ `vtable` trong cấu trúc `FILE` (hoặc các con trỏ hàm nằm trong cấu trúc `vtable`), thì trong các đợt nhập/xuất I/O tới sẽ kích hoạt các hàm này
+Nên cái cốt lõi của FSOP nằm ở việc: nếu ta có thể overwrite giá trị con trỏ `vtable` trong cấu trúc `FILE` (hoặc các con trỏ hàm nằm trong cấu trúc `vtable`), thì trong các đợt nhập/xuất I/O tới sẽ kích hoạt các hàm này
 
 ___
 ### Các phương thức khai thác `FILE` qua các phiên bản libc: 
