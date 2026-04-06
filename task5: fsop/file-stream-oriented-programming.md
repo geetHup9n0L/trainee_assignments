@@ -2,6 +2,7 @@
 
 FSOP là một kỹ thuật khai thác lỗ hổng nâng cao, tận dụng cấu trúc `FILE` (hay còn gọi là `_IO_FILE`) có sẵn trong thư viện của C chuẩn - dùng để quản lý các luồng nhập/xuất (I/O) tệp tin. Bởi vì trong các cấu trúc `FILE` tồn tại một **vtable pointer** (`_IO_jump_t *vtable`) và các `fields`, đều nằm trong vùng nhớ **writable** và được sử dụng trong quá trình nhập/xuất (I/O) qua các hàm như: `fopen`, `fclose`, `fflush`, `exit`,...
 
+___
 ### Cấu trúc của `_IO_FILE`:
 
 Đối với mỗi kiểu `FILE *` (như `stdin`, `stdout`, `stderr`) được cấu thành bởi cấu trúc `struct _IO_FILE` trong glibc. Các trường trong cấu trúc bao gồm:
@@ -24,6 +25,16 @@ struct _IO_FILE {
     const struct _IO_jump_t *vtable;  // <-- THE KEY TARGET
 };
 ```
+Có trường `_flags` điều khiển cách luồng hoạt động, với các giá trị:
+
+| Flag | Value | Meaning |
+| :--- | :--- | :--- |
+| `_IO_MAGIC` | `0xFBAD0000` | Required magic number in high bits |
+| `_IO_UNBUFFERED` | `0x0002` | No buffering |
+| `_IO_NO_READS` | `0x0004` | Reading not allowed |
+| `_IO_NO_WRITES` | `0x0008` | Writing not allowed |
+| `_IO_CURRENTLY_PUTTING` | `0x0800` | Currently in write mode |
+| `_IO_IS_APPENDING` | `0x1000` | Append mode |
 
 Đặc biệt có trường `_chain`: là một chuỗi danh sách liên kết đơn nối các đối tượng kiểu `FILE` với nhau, xuất phát từ con trỏ `_IO_list_all`. Khi chương trình gọi đến `exit()`, chương trình glibc sẽ gọi đến `_IO_flush_all_lockp`, thực hiện các phương thức `vtable` của mỗi đối tượng trong danh sách
 
