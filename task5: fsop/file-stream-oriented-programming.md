@@ -56,6 +56,7 @@ struct _IO_FILE_plus
 
 Đặc biệt có trường `_chain`: là một chuỗi danh sách liên kết đơn nối các đối tượng kiểu `FILE` với nhau, xuất phát từ con trỏ `_IO_list_all`. Khi chương trình gọi đến `exit()`, chương trình glibc sẽ gọi đến `_IO_flush_all_lockp`, thực hiện các phương thức `vtable` của mỗi đối tượng trong danh sách
 
+___
 ### Cấu trúc của `_IO_jump_t` Vtable:
 Cấu trúc của `vtable` là cấu trúc bao gồm các **con trỏ hàm**, được sử dụng trong các quá trình thao tác file: 
 
@@ -97,7 +98,7 @@ Các phương pháp FSOP sẽ khác nhau phụ thuộc vào các bản libc củ
   - Bên glibc đã vá lại cái `_IO_str_jumps` bypass, loại bỏ lỗ hổng thông qua việc không cho các luồng string gọi đến các con trỏ hàm trong cấu trúc `FILE` để được cấp phát. Trong các bản mới hơn (2.32+) giới thiệu đến mangling (safe-linking) cho tcache/fastbins, và bản 2.34 xóa bỏ `__malloc_hook` và `__free_hook` hoàn toàn.
   - Hướng tới các kỹ thuật mới hơn (House of Apple, House of Kiwi, House of Emma). Những kỹ thuật vấn tuân theo cái check của vtable, nhưng giờ sẽ khai thác con trỏ `_wide_data` hoặc các hàm nằm sâu bên trong vtables như `_IO_wfile_jumps`. Thường phải dựa vào một số flags cụ thể để đưa glibc về kiểu ký tự rộng để rồi cho phép điều khiển thanh ghi hoặc thực thi code. 
 
-
+___
 ### Các kỹ thuật phổ biến:
 
 Để có thể khai thác các cấu trúc `FILE` thường phải tồn tại trước các lỗ hổng bộ nhớ. Nổi bật là các lỗ hổng liên quan đến heap như là Use-After-Free (UAF) hoặc Double Free được sử dụng để tạo một cấu trúc `_IO_FILE` trên heap hoặc overwrite cái có sẵn (như stdin, stdout, or stderr). Tool như `pwntool` hỗ trợ tạo các đối tượng `FileStructure` này.
@@ -121,7 +122,15 @@ Các bản glibc trước 2.24, không có sự kiểm tra hay xác thực trên
 4. House of Apple
 
 
+___
 
+docs:
+
+https://www.youtube.com/watch?v=Y3apP4bInug&t=20s
+
+https://www.youtube.com/watch?v=Tv1Rss5Vqpk
+
+https://www.youtube.com/watch?v=vkUR58xxSFI&t=1563s
 
 
 
