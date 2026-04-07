@@ -142,7 +142,7 @@ ___
 
 Để có thể khai thác các cấu trúc `FILE` thường phải tồn tại trước các lỗ hổng bộ nhớ. Nổi bật là các lỗ hổng liên quan đến heap như là Use-After-Free (UAF) hoặc Double Free được sử dụng để tạo một cấu trúc `_IO_FILE` trên heap hoặc overwrite cái có sẵn (như stdin, stdout, or stderr). Tool như `pwntool` hỗ trợ tạo các đối tượng `FileStructure` này.
 
-1. Arbitrary Read / Arbitrary Write:
+1 - Arbitrary Read / Arbitrary Write:
 
 Bằng cách khai thác các con trỏ buffer bên trong cấu trúc `FILE` (như là _IO_write_base, _IO_write_ptr, _IO_read_base, and _IO_buf_end), ta bắt chương trình phải đọc hoặc viết vào vùng nhớ bất kỳ
 
