@@ -106,8 +106,39 @@ ___
 1. Arbitrary Read / Arbitrary Write:
 
 Bằng cách khai thác các con trỏ buffer bên trong cấu trúc `FILE` (như là _IO_write_base, _IO_write_ptr, _IO_read_base, and _IO_buf_end), ta bắt chương trình phải đọc hoặc viết vào vùng nhớ bất kỳ
-* Arbitrary Read:
-* Arbitrary Write:
+
+* **Arbitrary Read**: qua `fread()` viết vào memory
+  * File được mở ở chế độ **read**
+  * set `_flag`: cho `_IO_NO_READS` = 0
+  * set `_IO_read_ptr == _IO_read_end` (để bắt chương trình cấp cấp thêm bộ nhớ)
+  * set `_IO_buf_base` = target address để viết vào
+  * set `_IO_buf_end` = target address + length (độ dài của vùng nhớ)
+  * set các con trỏ khác = NULL
+ 
+  Khi `read_ptr` == `read_end`, glibc thấy buffer đã cạn kiệt, lúc này gọi tới `read()` syscall để cấp thêm, nhưng giờ địa chỉ vùng nhớ cấp thêm `_IO_buf_base` bị thay đổi thành target của ta (`win_variable`)
+  ```c
+    [ _IO_buf_base ]————————————[ _IO_buf_end ]
+          ↑                             ↑
+      target addr              target addr + N
+           ← data from file gets written here →
+  ```
+
+* **Arbitrary Write**: qua `fwrite()` leak từ memory
+  * File được mở ở chế độ **write**
+  * set `_flag`: cho `_IO_NO_WRITES` = 0
+  * set `_IO_write_base` = địa chỉ vùng nhớ muốn leak
+  * set `_IO_write_ptr` = target address + length (kích thước vùng nhớ)
+  * set `_IO_read_end == _IO_write_base`
+  * set các con trỏ khác = NULL
+ 
+  Khi mà glibc flush đống data trong buffer, sẽ leak các data trong vùng `write_base` và `write_ptr` ra file
+  ```c
+    [ _IO_write_base ]————————[ _IO_write_ptr ]
+            ↑                          ↑
+       secret_value            secret + N bytes
+          ← these bytes get flushed to the file →
+  ```
+Vì glibc không kiểm tra các con trỏ buffer bên trong cấu trúc FILE, nên ta có thể khai thác được
 
 3. Classic FSOP — Vtable Hijacking (pre-glibc 2.24)
 
@@ -119,7 +150,23 @@ Các bản glibc trước 2.24, không có sự kiểm tra hay xác thực trên
 
 3. House of Orange - `_IO_str_overflow` (glibc 2.23 - 2.24)
 
+Với sự xuất hiện của `_IO_vtable_check()`, kỹ thuật hướng tới khai thác các hàm vtable hợp lệ có sẵn như là `_IO_str_overflow`, gọi đến hàm `_s._allocate_buffer` bên trong khi đáp ứng một số điều kiện. 
+```c
+if (avail != 0)
+    (*fp->_s._allocate_buffer)(new_size);
+```
+
+Mà `_s._allocate_buffer` lại nằm đâu đấy trong cấu trúc `_IO_FILE`, không phải ở trong vtable nên tránh được cái vtable check. Bằng cách thay đổi cấu trúc sao cho hàm trỏ tới `system` và set trường `_IO_buf_base` trỏ tới `/bin/sh` thì ta khai thác được
+```c
+_flags              = 0
+_IO_buf_base        = &"/bin/sh"
+_s._allocate_buffer = &system
+_IO_write_ptr - _IO_write_base  >  _IO_buf_end - _IO_buf_base
+```
+
 4. House of Apple
+
+Khi mà vtable check càng ngày được vá lại chặt chẽ hơn, kỹ thuật này tận dụng trường `_wide_data` có sẵn trong cấu trúc `_IO_FILE`. Thay vì là tạo một vtable giả khác, ta sẽ chọn một vtable có sẵn, hợp lệ như là `_IO_wfile_jumps` và khai thác `_wide_data->vtable` để kích hoạt `system()`, bỏ qua sự kiểm tra của vtable
 
 
 ___
