@@ -187,7 +187,7 @@ Các bản glibc trước 2.24, không có sự kiểm tra hay xác thực trên
 * Ta nhét cái khối `FILE` giả này vào danh sách `_IO_list_all` (thông qua việc heap exploit)
 * Cuối cùng, gọi `exit()` hoặc `fflush()`, glibc sẽ chạy qua danh sách, gọi đến một con trỏ hàm trong `vtables` (như `__overflow` hoặc `__finish`) giả của mình --> thực thi code
 
-**3 - House of Orange - `_IO_str_overflow` (glibc 2.23 - 2.24)**
+**3 - `_IO_str_jumps`/`_IO_str_overflow` bypass (glibc 2.24 - 2.27)**
 
 Với sự xuất hiện của `_IO_vtable_check()`, kỹ thuật hướng tới khai thác các hàm vtable hợp lệ có sẵn như là `_IO_str_overflow`, gọi đến hàm `_s._allocate_buffer` bên trong khi đáp ứng một số điều kiện. 
 ```c
@@ -203,7 +203,7 @@ _s._allocate_buffer = &system
 _IO_write_ptr - _IO_write_base  >  _IO_buf_end - _IO_buf_base
 ```
 
-**4 - House of Apple**
+**4 - House of Apple — Khai thác `_wide_data` vtable (glibc ≥ 2.28 / 2.34+)**
 
 Khi mà vtable check càng ngày được vá lại chặt chẽ hơn, kỹ thuật này tận dụng trường `_wide_data` có sẵn trong cấu trúc `_IO_FILE`. Thay vì là tạo một vtable giả khác, ta sẽ chọn một vtable có sẵn, hợp lệ như là `_IO_wfile_jumps` và khai thác `_wide_data->vtable` để kích hoạt `system()`, bỏ qua sự kiểm tra của vtable
 
