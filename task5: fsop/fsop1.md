@@ -153,6 +153,9 @@ Và khi ta điền input thì ra được flag
 
 Vậy nên mặc dù gọi đến `fread(buf,1,8,fp)`, đáng lẽ lấy luồng data từ `fp`, nhưng vì `fileno` đã chuyển luồng thành luồng stdin - lấy data input từ ta. Và bên cạnh đó, thay vì read data vào bộ nhớ tạm `buffer` của FILE, thì giờ nó overwrite data vào vùng `aura` (bởi vì ta đã thay đổi con trỏ `buf_base`) làm thay đổi gái trị NULL bên trong. Từ đấy lấy được flag 
 
+<img width="806" height="94" alt="image" src="https://github.com/user-attachments/assets/a7e4f65d-691d-4537-9818-a4d94fba06d2" />
+
+
 `script.py`:
 ```python
 from pwn import *
@@ -186,8 +189,6 @@ payload = fp.read(aura_addr, 10)
 print(fp)
 
 p.send(payload)
-
-p.send(b"aaaa")
 
 p.interactive()
 ```
