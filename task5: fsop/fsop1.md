@@ -51,6 +51,21 @@ undefined8 main(void)
 }
 
 ```
+* DÒng này làm gì
+  ```c
+    buffer = fopen("/dev/null","r");
+    read(0,buffer,256);
+    fread(ptr,1,8,buffer);
+  ```
+
+* biến global `aura`
+  ```c
+    if (aura == 0) {
+      puts("u have no aura.");
+    }
+  ```
+  <img width="499" height="86" alt="image" src="https://github.com/user-attachments/assets/c9c41497-b894-4650-967b-f42595e5c780" />
+
 
 ___
 ### Exploit:
@@ -58,3 +73,6 @@ ___
 
 
 ___
+reference:
+
+https://www.youtube.com/watch?v=Tv1Rss5Vqpk&t=490s
