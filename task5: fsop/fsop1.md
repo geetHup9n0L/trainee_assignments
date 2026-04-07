@@ -66,6 +66,16 @@ undefined8 main(void)
   ```
   <img width="499" height="86" alt="image" src="https://github.com/user-attachments/assets/c9c41497-b894-4650-967b-f42595e5c780" />
 
+* bên cạnh đấy, khi học đến cấu trúc FILE, giờ ta mới để ý đến:
+  ```c
+  setbuf(stdin,(char *)0x0);
+  setbuf(stdout,(char *)0x0);
+  setbuf(stderr,(char *)0x0);
+  ```
+  `stdin`, `stdout`, `stderr` cũng là các biến global 
+
+  <img width="531" height="570" alt="image" src="https://github.com/user-attachments/assets/0b58c9ac-3e44-441d-aa26-594ec60c565c" />
+
 
 ___
 ### Exploit:
