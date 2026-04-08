@@ -16,6 +16,7 @@ Full RELRO      No canary found   NX enabled    PIE enabled     No RPATH   RW-RU
 
 ___
 Output từ `chall`:
+
 <img width="804" height="196" alt="image" src="https://github.com/user-attachments/assets/220f9f4c-1840-4e6b-a25a-2440b9037b8a" />
 
 ### Code:
