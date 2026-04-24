@@ -169,6 +169,8 @@ void view(void)
   return;
 }
 ```
+* có thể dùng để leak địa chỉ heap hoặc địa chỉ libc
+
 `edit()`:
 ```c
 void edit(void)
