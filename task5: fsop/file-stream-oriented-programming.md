@@ -42,6 +42,7 @@ Có trường `_flags` điều khiển cách luồng hoạt động, với các 
 
 Các trường trên giúp các hàm có thể tương tác giữa file và buffer. Ta lấy ví dụ 2 hàm là `fread()` và `fwrite()` của file
 * Cách `fread()` hoạt động: Đọc từ File -> Memory
+  
   Khi gọi đến `fread()`, nó không gọi đến kernel ngay. Mà kiểm tra buffer trước:
   ```c
     Full buffer layout in memory:
@@ -60,7 +61,8 @@ Các trường trên giúp các hàm có thể tương tác giữa file và buff
   * khi mà `read_ptr == read_end` (buffer đã cạn kiệt/đã đọc xong), glibc gọi đến `read()` syscall để refill cái buffer từ `buf_base` đến `buf_end`, tái sử dụng lại buffer từ đầu
   * nếu dữ liệu trong file bé hơn buffer, thì phần thừa ra để nguyên
  
-* Cách `fwrite()` hoạt động: Viết từ Memory -> Fil
+* Cách `fwrite()` hoạt động: Viết từ Memory -> File
+  
   Tương tự, `fwritw()` không trực tiếp viết ra ổ đĩa. Mà thông qua buffer:
   ```c
     Write buffer layout in memory:
