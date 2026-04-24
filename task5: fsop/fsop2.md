@@ -98,18 +98,44 @@ void create(void)
     ptr[1] = (long)data;
     ptr[2] = 0;
     if (store == (long *)0x0) {
-      store = ptr;
+      store = ptr;    // store node at headPtr if empty
     }
     else {
       for (store_idx = store; store_idx[2] != 0; store_idx = (long *)store_idx[2]) {
       }
-      store_idx[2] = (long)ptr;
+      store_idx[2] = (long)ptr; // set curr_node->next = node
       puts("Done");
     }
   }
   return;
 }
 ```
+* Cho phép người dùng tạo chunk với size tự nhập
+* Size của chunk được cấp phát từ `chunk_size`
+* `chunk_size` là biến global, là tổng size người dùng có thể mượn để tạo chunk
+  
+  <img width="504" height="147" alt="image" src="https://github.com/user-attachments/assets/0e991308-b84f-4924-85ec-a51af6f0aa8b" />
+
+  `chunk_size` = 0x200
+
+* cấu trúc của một `ptr` định nghĩa trong code:
+  ```c
+    ptr = (long *)malloc(0x18);
+    *ptr = (long)size;
+    data = malloc((long)size);
+    ptr[1] = (long)data;
+    ptr[2] = 0;
+  ```
+  hay
+  ```c
+  ptr {
+    size
+    *data[size]
+    *next
+  }
+  ```
+
+
 `view()`:
 ```c
 void view(void)
