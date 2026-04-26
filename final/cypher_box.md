@@ -62,8 +62,8 @@ undefined8 main(void)
 }
 ```
 * bug: `print_hex = ::print_hex;` có thể bị overwrite trên stack
-```c
 
+```c
 void print_hex(long buf,ulong len)
 
 {
@@ -76,6 +76,16 @@ void print_hex(long buf,ulong len)
   return;
 }
 ```
+```c
+void session_done(void)
+
+{
+  system("echo \'[*] Goodbye!\'");
+  return;
+}
+```
+
+`do_set()`:
 ```c
 void do_set(undefined8 buffer)
 {
@@ -97,6 +107,8 @@ void do_set(undefined8 buffer)
 }
 ```
 * bug: cho phép overwrite giá trị của 2 functions (print_hex, session_done) trên stack
+
+`do_get()`:
 ```c
 void do_get(undefined8 buffer)
 {
@@ -115,6 +127,7 @@ void do_get(undefined8 buffer)
   return;
 }
 ```
+`do_encode()`:
 ```c
 void do_encode(long buffer)
 {
@@ -144,7 +157,8 @@ void do_encode(long buffer)
 * bug: thực thi code, gọi đến hàm `print_hex` với tham số là userinput  
   ```c
   (**(code **)(buffer + 0x20))(buf,len);
-  ````
+  ```
+`do_reset()`:
 ```c
 void do_reset(long buffer)
 {
@@ -182,6 +196,8 @@ void do_reset(long buffer)
 }
 ```
 * bug: option `1. Identity`, dùng để dựng chuỗi `/bin/sh` ở hàm `do_encode()`
+
+`do_dump()`:
 ```c
 void do_dump(long buffer)
 {
