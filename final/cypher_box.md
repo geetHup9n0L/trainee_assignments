@@ -9,6 +9,8 @@ cipherbox: ELF 64-bit LSB executable, x86-64, version 1 (SYSV), dynamically link
 RELRO           STACK CANARY      NX            PIE             RPATH      RUNPATH       Symbols         FORTIFY Fortified       Fortifiable     FILE
 Partial RELRO   No canary found   NX enabled    No PIE          No RPATH   No RUNPATH   58 Symbols         No    0               3               cipherbox       
 ```
+* `No PIE`
+
 ### code:
 `main()`:
 ```c
