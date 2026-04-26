@@ -141,7 +141,7 @@ void do_encode(long buffer)
   return;
 }
 ```
-* bug: thực thi hàm
+* bug: thực thi code, gọi đến hàm `print_hex` với tham số là userinput  
   ```c
   (**(code **)(buffer + 0x20))(buf,len);
   ````
@@ -181,7 +181,7 @@ void do_reset(long buffer)
   return;
 }
 ```
-* bug
+* bug: option `1. Identity`
 ```c
 void do_dump(long buffer)
 {
@@ -200,6 +200,8 @@ void do_dump(long buffer)
 ```
 ___
 ### Exploit:
+
+<img width="656" height="440" alt="image" src="https://github.com/user-attachments/assets/0535c159-ddfd-492e-a6ae-84cb3f898eff" />
 
 <img width="668" height="267" alt="image" src="https://github.com/user-attachments/assets/49de13be-8712-4dc1-8992-48d8b77b30d5" />
 
