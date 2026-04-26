@@ -61,7 +61,7 @@ undefined8 main(void)
   } while( true );
 }
 ```
-* bug: `print_hex = ::print_hex;`
+* bug: `print_hex = ::print_hex;` có thể bị overwrite
 ```c
 
 void print_hex(long buf,ulong len)
@@ -96,6 +96,7 @@ void do_set(undefined8 buffer)
   return;
 }
 ```
+* bug: cho phép overwrite giá trị của 2 functions (print_hex, session_done) trên stack
 ```c
 void do_get(undefined8 buffer)
 {
@@ -140,7 +141,7 @@ void do_encode(long buffer)
   return;
 }
 ```
-* bug:
+* bug: thực thi hàm
   ```c
   (**(code **)(buffer + 0x20))(buf,len);
   ````
