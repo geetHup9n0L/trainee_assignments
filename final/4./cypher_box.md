@@ -61,7 +61,7 @@ undefined8 main(void)
   } while( true );
 }
 ```
-
+* bug: `print_hex = ::print_hex;`
 ```c
 
 void print_hex(long buf,ulong len)
@@ -197,8 +197,10 @@ void do_dump(long buffer)
   return;
 }
 ```
+___
+### Exploit:
 
-
+<img width="668" height="267" alt="image" src="https://github.com/user-attachments/assets/49de13be-8712-4dc1-8992-48d8b77b30d5" />
 
 ___ 
 Script: `script.py`
