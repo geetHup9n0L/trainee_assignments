@@ -61,7 +61,7 @@ undefined8 main(void)
   } while( true );
 }
 ```
-* bug: `print_hex = ::print_hex;` có thể bị overwrite
+* bug: `print_hex = ::print_hex;` có thể bị overwrite trên stack
 ```c
 
 void print_hex(long buf,ulong len)
@@ -181,7 +181,7 @@ void do_reset(long buffer)
   return;
 }
 ```
-* bug: option `1. Identity`
+* bug: option `1. Identity`, dùng để dựng chuỗi `/bin/sh` ở hàm `do_encode()`
 ```c
 void do_dump(long buffer)
 {
