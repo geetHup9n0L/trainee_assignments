@@ -63,7 +63,7 @@ undefined8 main(void)
   } while( true );
 }
 ```
-* bug: `print_hex = ::print_hex;` có thể bị overwrite trên stack
+* các hàm `print_hex = ::print_hex;`, `session_done = ::session_done;` nằm trên stack, có thể bị overwrite
 
 ```c
 void print_hex(long buf,ulong len)
@@ -129,7 +129,7 @@ void do_set(undefined8 buffer)
     ```
     Mà kiểu datatype này có giá trị dải trong đoạn từ `-128 -> 127`
 
-	Nên khi set `val1 = 255`, khi bị ép kiểu `val1 = -1`, overwrite giá trị val2 ngược xuống vị trí hàm `session_done`, `print_hex`
+	Nên khi set `val1 = 255`, bị ép kiểu về `val1 = -1`, overwrite giá trị val2 ngược xuống vị trí hàm `session_done`, `print_hex`
 
 	<img width="658" height="299" alt="image" src="https://github.com/user-attachments/assets/3c689686-ca47-40ea-8f99-c1efda4b4463" />
 
