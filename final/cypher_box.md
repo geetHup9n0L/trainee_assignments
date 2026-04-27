@@ -131,6 +131,12 @@ void do_set(undefined8 buffer)
 
 	Nên khi set `val1 = 255`, khi bị ép kiểu `val1 = -1`, overwrite giá trị val2 ngược xuống vị trí hàm `session_done`, `print_hex`
 
+	<img width="658" height="299" alt="image" src="https://github.com/user-attachments/assets/3c689686-ca47-40ea-8f99-c1efda4b4463" />
+
+	`do_set(255,255)`
+
+	<img width="660" height="260" alt="image" src="https://github.com/user-attachments/assets/9893decd-fa73-4e67-8909-7a5400ef410a" />
+
     Là một bug về sự biến đổi giữa signed/unsigned values, cho phép thực hiện outofbound overwrite
 
 `do_get()`:
