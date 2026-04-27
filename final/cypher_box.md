@@ -102,13 +102,36 @@ void do_set(undefined8 buffer)
     puts("  [-] Invalid byte value");
   }
   else {
-    set_mapping(buffer,(int)(char)val1,(int)(char)val2); // viết giá trị byte val2 vào vị trí val1 trên stack
+    set_mapping(buffer,(int)(char)val1,(int)(char)val2); // viết giá trị byte 'val2' vào vị trí 'val1' trên stack
     puts("  [+] Updated");
   }
   return;
 }
 ```
-* bug: cho phép overwrite giá trị của 2 functions (print_hex, session_done) trên stack
+* bug: hàm cho phép overwrite giá trị của 2 functions (print_hex, session_done) trên stack
+  * chức năng gốc là để set giá trị byte tùy ý trong dải 128 bytes mà ta đã khởi tạo ở main:
+    ```c
+      // main()
+	  print_hex = ::print_hex;
+	  session_done = ::session_done;
+	  for (i = 0; i < 128; i = i + 1) {
+	    abStack_98[i] = (byte)i ^ 0x5a;    ////////
+	  }
+    ```
+  * nhưng hàm lại cho điền giá trị lớn hơn định nghĩa (`128`):
+    ```c
+	  printf("  From (0-255): ");
+	  val1 = readint();
+    ```
+    và sau đó ép kiểu dữ liệu biến thành `(int)(char)`, khi gọi hàm `set_mapping()`:
+    ```c
+      set_mapping(buffer,(int)(char)val1,(int)(char)val2);
+    ```
+    Mà kiểu datatype này có giá trị dải trong đoạn từ `-128 -> 127`
+ 
+    Là một bug về sự biến đổi giữa signed/unsigned values
+
+	Nên khi set `val1 = 255`, khi bị ép kiểu `val1 = -1`, overwrite giá trị val2 ngược xuống vị trí hàm `session_done`, `print_hex`
 
 `do_get()`:
 ```c
@@ -156,7 +179,7 @@ void do_encode(long buffer)
   return;
 }
 ```
-* bug: thực thi code, gọi đến hàm `print_hex` với tham số là từ user input  
+* thực thi code, gọi đến hàm `print_hex` với tham số là từ user input  
   ```c
   (**(code **)(buffer + 0x20))(buf,len);
   ```
@@ -197,7 +220,7 @@ void do_reset(long buffer)
   return;
 }
 ```
-* bug: option `1. Identity`, để sau đó dùng bảng dựng chuỗi `/bin/sh` ở hàm `do_encode()`
+* option `1. Identity`, để sau đó dùng bảng dựng chuỗi `/bin/sh` ở hàm `do_encode()`
 
 `do_dump()`:
 ```c
@@ -220,7 +243,7 @@ ___
 ### Exploit:
 
 Ảnh stack với
-* `do_set()`: print_hex -> system
+* `do_set()`: biến đổi từng byte một ở vùng nhớ `print_hex` -> `system`
 * `do_reset()`: phần stack phía sau được biến đổi theo `Mode: 1`, biến thành bảng ascii
 
 <img width="656" height="440" alt="image" src="https://github.com/user-attachments/assets/0535c159-ddfd-492e-a6ae-84cb3f898eff" />
