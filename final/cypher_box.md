@@ -128,10 +128,10 @@ void do_set(undefined8 buffer)
       set_mapping(buffer,(int)(char)val1,(int)(char)val2);
     ```
     Mà kiểu datatype này có giá trị dải trong đoạn từ `-128 -> 127`
- 
-    Là một bug về sự biến đổi giữa signed/unsigned values
 
 	Nên khi set `val1 = 255`, khi bị ép kiểu `val1 = -1`, overwrite giá trị val2 ngược xuống vị trí hàm `session_done`, `print_hex`
+
+    Là một bug về sự biến đổi giữa signed/unsigned values, cho phép thực hiện outofbound overwrite
 
 `do_get()`:
 ```c
